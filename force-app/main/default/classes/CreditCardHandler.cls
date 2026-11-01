@@ -6,6 +6,8 @@
 *      Change History:
 *             #CH01# 01-11-2026# Moved reStartManualOnboarding from CaseHandler and renamed it to creditCardApplicationUpdate (CaseHandler #CH93#).
 *                    All change markers (CH01-CH92) inside the method refer to the CaseHandler change history.
+*             #CH02# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah,
+*                    Customer Profile Update) back to CaseHandler.reStartManualOnboarding (CaseHandler #CH94#).
 */
 public without sharing class CreditCardHandler {
     /**
@@ -14,15 +16,10 @@ public without sharing class CreditCardHandler {
     * @param oldMap   Trigger.oldMap - previous versions of the Case records
     */
     public static void creditCardApplicationUpdate(final List<Case> newRecs, final Map<Id, Case> oldMap) {
-        //CH01: Start
-        Set<Id> cntIds = new Set<Id>();
         Map<ID,Schema.RecordTypeInfo> rt_Map = Case.sObjectType.getDescribe().getRecordTypeInfosById();
-        Map<Id,List<Case>> mapContactToCases = new Map<Id,List<Case>>();
-        //CH01: END
         //CH02: Start
         Set<Id> reSendDocSet = new Set<Id>();
         //CH02: END
-        Set<Id> setCase  = new Set<Id>();
         Set<Id> reSendDocSetInApp = new Set<Id>();//#CH84
         Set<Id> setCasePending = new Set<Id>();
         Set<Id> setCaseDocReceived  = new Set<Id>();
@@ -30,10 +27,6 @@ public without sharing class CreditCardHandler {
         Set<Id> setCaseDocDiscrepancies  = new Set<Id>();
         Set<Id> setCaseDeclined  = new Set<Id>();
         Set<Id> setCaseExpired = new Set<Id>();
-        Set<Id> setCaseEKYC  = new Set<Id>();
-        Set<Id> setCaseEKYCManualRetry  = new Set<Id>();
-        Set<Id> setCaseEKYCIdentificationCase  = new Set<Id>();
-        Set<Id> setCaseStopJamiyah  = new Set<Id>();
         Set<ID> setSuppCaseMakerReferToSC = new Set<ID>();
         Set<ID> setSuppCaseMakerRelationshipEstablishment = new Set<ID>();
         Set<ID> setSuppCaseMakerSendPreScreener = new Set<ID>();
@@ -82,9 +75,6 @@ public without sharing class CreditCardHandler {
         //CH10: END
         Set<Id> setCaseHRApprovedForReleaseLetter  = new Set<Id>();
         Set<Id> setCaseAcceptedByEvaluator = new Set<Id>();
-        //CH38  Start
-        Set<Id> setCaseProfileUpdate = new Set<Id>();
-        //CH38  End
         //CH13: Start
         Set<Id> setCaseApprovedBySigVerifierForLimitIncrease = new Set<Id>();
         //CH24: Start
@@ -116,12 +106,7 @@ public without sharing class CreditCardHandler {
         //CH85: END
         for(Case caseObj : newRecs) {
             Case caseOldObj = oldMap.get(caseobj.id);
-            //CH01: Start
             string recordtypeName = rt_Map.get(caseObj.RecordTypeId).getName();
-            if(recordtypeName == 'Manual Customer Archival' && caseObj.Status != caseOldObj.Status && caseObj.Status == 'Closed' && (((caseObj.cc_Checker_Result__c!='Decline' && caseObj.cc_Maker__c!='Cancel Prospect Archive') && caseObj.Region_Flag__c=='Bahrain') ||(caseObj.Closure_Type__c!='Closed Rejected' && caseObj.Region_Flag__c=='Jordan'))){
-                cntIds.add(caseObj.ContactId);
-            }
-            //CH01: END
             //CH07: Start
             //CH09: END
             //CH85: Start
@@ -129,26 +114,6 @@ public without sharing class CreditCardHandler {
                 ccservicecseIds.add(caseObj.id);
             }
             //CH85: END
-            if(caseObj.Lead_Created_Account__c == true && caseObj.Status != caseOldObj.Status && caseObj.Status == 'Closed' && caseObj.Type == 'Technical' && caseObj.archive__c==false)
-            {
-                setCase.add(caseObj.id);
-            }
-            if(caseObj.Status != caseOldObj.Status && caseObj.Status == 'Closed' && caseObj.Type == 'eKYC' && caseObj.archive__c==false)
-            {
-                setCaseEKYC.add(caseObj.id);
-            }
-            if(caseObj.eKYC_decision__c != caseOldObj.eKYC_decision__c && caseObj.Type == 'eKYC' && caseObj.eKYC_decision__c == 'Manual Retry')
-            {
-                setCaseEKYCManualRetry.add(caseObj.id);
-            }
-            if(caseObj.eKYC_decision__c != caseOldObj.eKYC_decision__c && caseObj.Type == 'eKYC' && caseObj.eKYC_decision__c == 'Convert to Identification Case')
-            {
-                setCaseEKYCIdentificationCase.add(caseObj.id);
-            }
-            if(caseObj.Type == 'Stop Jamiyah' && caseObj.Requested_by_Admin_new__c != true && caseObj.Closure_Type__c != caseOldObj.Closure_Type__c && caseObj.Closure_Type__c == 'Closed Approved')
-            {
-                setCaseStopJamiyah.add(caseObj.id);
-            }
             //CH55: Added Region Flag in if condition
             if(caseOldObj.Sub_Status__c != caseObj.Sub_Status__c  && caseObj.Sub_Status__c =='Pending' && caseObj.Region_Flag__c == 'Bahrain' && ((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')  || (caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Sub_Type__c == 'New Supplementary Card') || (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')))
             {
@@ -822,73 +787,13 @@ public without sharing class CreditCardHandler {
                    setSuppCaseCancelledByCustomer.add(caseObj.id);
                }
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            //CH38: Start
-            //CH86: Start
-            if(recordtypeName == 'Customer Profile Update' && caseObj.cc_Checker_Result__c != caseOldObj.cc_Checker_Result__c && caseObj.cc_Checker_Result__c == 'Approve' && caseObj.Status != 'Closed'){
-                if(caseObj.Type == 'Profile Update' || (caseObj.Type == 'Personal Info Update' && ((caseObj.Sub_Type__c == 'Mobile update') || (caseObj.Sub_Type__c == 'Email update') || (caseObj.Sub_Type__c == 'Expired ID Update') || (caseObj.Sub_Type__c == 'Name Fix / Update') || (caseObj.Sub_Type__c == 'Address update') || (caseObj.Sub_Type__c == 'Additional Information') || (caseObj.Sub_Type__c == 'Guardian Info') ||(caseObj.Sub_Type__c == 'Geo-Location Check') || (caseObj.Sub_Type__c == 'Credit Card Guarantor CIF')))){
-                    System.debug('Customer Mobile Update for Automation of Production support');
-                    setCaseProfileUpdate.add(caseObj.Id);
-                }
-            }
-            //CH86: END
-            //CH38: END
         }
-        //CH38: Start
-        if(!setCaseProfileUpdate.isEmpty()){
-            profileUpdateHandler.profileUpdate(setCaseProfileUpdate);
-        }
-        //CH38: END
-        //CH01: Start
-        if(!cntIds.isEmpty()){
-            System.debug('Contact Ids:'+cntIds);
-            for(Case c : [Select id,ContactId,Status,cc_request_type__c,Sub_Type__c,Type from Case where (Type !='Manual Customer Archival' AND Sub_Type__c!='Archival' AND cc_request_type__c NOT IN ('Archival Duplicate','Archival Underage','Archival Stuck in OB stage','Archival Others')) and Status NOT IN('Closed','Approved','Rejected') AND (Region_Flag__c='Jordan' OR (Region_Flag__c='Bahrain' AND Archive__c=False))  AND  ContactId IN : (cntIds)]){
-                system.debug('Type'+c.Type);
-                system.debug('Sub_Type__c'+C.Sub_Type__c);
-                system.debug('cc_request_type__c'+C.cc_request_type__c);
-                if(mapContactToCases.containsKey(c.ContactId)){
-                    mapContactToCases.get(c.ContactId).add(c);
-                }
-                else{
-                    mapContactToCases.put(c.ContactId,new List<Case>{c});
-                }
-            }
-            for(Case cs : newRecs){
-                if(mapContactToCases.containsKey(cs.ContactId)){
-                    cs.addError(System.Label.ARCHIVE_ERROR_MSG);
-                }
-            }
-        }
-        //CH01: END
         //CH85: Start
         if(ccservicecseIds.size()>0){
             CreditCardCacheQueuableAPI cacheCards =  new CreditCardCacheQueuableAPI(ccservicecseIds);
             System.enqueueJob(cacheCards);
         }
         //CH85: END
-        if(!setCase.isEmpty())
-        {
-            initiateManualOnboarding.reTriggerManualOnboarding(setCase);
-        }
-        ////////////////////// Triggering the Continue Onboarding on Manual CLosure of eKYC cases /////////////////////
-        if(!setCaseEKYC.isEmpty())
-        {
-            initiateManualOnboarding.EKYCManualClosure(setCaseEKYC);
-        }
-        if(!setCaseEKYCManualRetry.isEmpty())
-        {
-            initiateManualOnboarding.EKYCManualRetry_IDCase(setCaseEKYCManualRetry);
-        }
-        if(!setCaseEKYCIdentificationCase.isEmpty())
-        {
-            initiateManualOnboarding.EKYCManualRetry_IDCase(setCaseEKYCIdentificationCase);
-        }
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////// Triggering the request for the Jamiyah Stop cases /////////////////////
-        if(!setCaseStopJamiyah.isEmpty())
-        {
-            initiateManualOnboarding.stopJamiyahCase(setCaseStopJamiyah);
-        }
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////// Credit Card update requests API calls /////////////////////
         if(!setCasePending.isEmpty())
         {
