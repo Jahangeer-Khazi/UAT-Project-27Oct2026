@@ -4,7 +4,7 @@
 *                     Invoked from CaseHandler.afterUpdate().
 *      Created Date : 01-11-2026
 *      Change History:
-*             #CH01# 01-11-2026# Moved reStartManualOnboarding from CaseHandler (CaseHandler #CH93#).
+*             #CH01# 01-11-2026# Moved reStartManualOnboarding from CaseHandler and renamed it to creditCardApplicationUpdate (CaseHandler #CH93#).
 *                    All change markers (CH01-CH92) inside the method refer to the CaseHandler change history.
 */
 public without sharing class CreditCardHandler {
@@ -13,7 +13,7 @@ public without sharing class CreditCardHandler {
     * @param newRecs  Trigger.new  - updated Case records
     * @param oldMap   Trigger.oldMap - previous versions of the Case records
     */
-    public static void reStartManualOnboarding(final List<Case> newRecs, final Map<Id, Case> oldMap) {
+    public static void creditCardApplicationUpdate(final List<Case> newRecs, final Map<Id, Case> oldMap) {
         //CH01: Start
         Set<Id> cntIds = new Set<Id>();
         Map<ID,Schema.RecordTypeInfo> rt_Map = Case.sObjectType.getDescribe().getRecordTypeInfosById();

@@ -96,7 +96,7 @@
 #CH90# #Jahangeer Mohammed# 28-08-2026# Added Logic for Making Comments Blank for Credit Card Upgrade(UATNB-228941)
 #CH91# #Maksud Ali 31-08-2026# Added logic for Maker/checker for Place Hold ticket.
 #CH92# #Ranjith Raja 14-10-2026# Added logic for Jordan Credit Card Insurance Monthly Fee.
-#CH93# 01-11-2026# Moved reStartManualOnboarding method to the new support class CreditCardHandler (logic unchanged).
+#CH93# 01-11-2026# Moved reStartManualOnboarding method to the new support class CreditCardHandler and renamed it to creditCardApplicationUpdate (logic unchanged).
 */
 public without sharing class CaseHandler extends BaseTriggerHandler {
     private static final String  CONTACT_CENTRE_QUEUE = 'Contact Centre';
@@ -205,7 +205,7 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         //CH81: END
     }
     override public void afterUpdate () {
-        CreditCardHandler.reStartManualOnboarding((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap); //CH93
+        CreditCardHandler.creditCardApplicationUpdate((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap); //CH93
         //CH18: wissal changes
         SM002_CbbAmountHandler.handleAfterCaseUpdate( (List<Case>) Trigger.new ,(Map<Id,Case>)Trigger.oldMap );
         //CH78: Start
