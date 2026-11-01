@@ -115,7 +115,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
     }
     // CH51 - End
     override public void beforeInsert () {
-        //... your code here
         setCaseUuid((List<Case>)Trigger.new);
         setContact((List<Case>)Trigger.new);
         //CH78: Start
@@ -189,17 +188,11 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         InvestmentQuestionnaireHandler.handlerBeforeCaseUpdate((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap);
         creditCardListController.handleCancelBalanceTransferPlanMaker((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap);
     }
-    //override public void beforeDelete () {
-    //... your code here
-    //}
     override public void afterInsert () {
         CCRequestCreation((List<Case>)Trigger.new);
         //CH16: Start
         CashCollateralHandler.handlerAfterCaseCreation((List<Case>)Trigger.new);
         //CH16: END
-        //CH47: Start
-        //walkInCustomerHandler.handlerAfterCaseCreation((List<Case>)Trigger.new);
-        //CH47: END
         //CH48: Start
         PeriodicReviewHandler.handlerAfterCaseCreation((List<Case>)Trigger.new);
         //CH48: END
@@ -237,7 +230,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         //CH72: END
         CaseSLATriggerHandler.handleOwnerChange((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap);
         processPostUpdate((List<Case>)Trigger.new, (Map<Id, Case>)Trigger.oldMap);
-        //CaseOnboardingHandler.handleAfterUpdate((List<Case>)Trigger.new, (Map<Id, Case>)Trigger.oldMap);
         Set<Id> caseIds = new Set<Id>();
         Set<Id> placeHoldCaseIds = new Set<Id>(); //MA CH91
         for (Case c : (List<Case>)Trigger.new) {
@@ -256,7 +248,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
             //CH91 END MA NBA-13633
         }
         if (!caseIds.isEmpty()) {
-            //CaseProcessingHandler.handleCheckerApproval(caseIds);
             System.enqueueJob(new HandleCheckerApprovalQueueable(caseIds));
         }
         creditCardListController.handleCancelBalanceTransferPlanChecker((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap);
@@ -270,12 +261,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         }
         //CH91 END MA NBA-13633
     }
-    //override public void afterDelete () {
-    //... your code here
-    //}
-    //override public void afterUnDelete () {
-    //... your code here
-    //}
     @TestVisible
     private static void setCaseUuid(final List<Case> recs){
         //CH13: Start Added by #Jahangeer Mohammed# #05-11-2021#
@@ -344,7 +329,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         Set<ID> setSuppCasePrescreenerToSC = new Set<ID>();
         Set<ID> setSuppCaseSCRoutedToMaker = new Set<ID>();
         //CH05: Start
-        //Set<Id> setCaseRoutedFromTempQueueToPreScreener = new Set<Id>();
         Set<Id> setCaseRoutedFromPreScreenerToEvaluator = new Set<Id>();
         Set<Id> setCaseRoutedFromPrescreenerToServiceCenter = new Set<Id>();
         //CH50: Start
@@ -352,7 +336,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         //CH50: END
         Set<Id> setCaseRoutedFromEvaluatorToServiceCenter = new Set<Id>();
         Set<Id> setCaseRoutedFromEvaluatorToVerifier = new Set<Id>();
-        //Set<Id> setCaseRoutedFromEvaluatorToBuyout = new Set<Id>();
         Set<Id> setCaseRoutedFromVerifierToApprover = new Set<Id>();
         Set<Id> setCaseRoutedFromVerifierToServiceCenter = new Set<Id>();
         Set<Id> setCasesRoutedToCreditSignatureVerificationQueueFromApprover = new Set<Id>();
@@ -368,12 +351,8 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         Set<Id> setCaseRoutedToSignatureVerifierFromServiceCenter = new Set<Id>();
         Set<Id> setCaseRoutedToEvaluationFromServiceCenterIfLetterRec = new Set<Id>();
         Set<Id> setCasesRouteToBuyoutQueue = new Set<Id>();
-        //Set<Id> setCaseClosedByOperationsForBalanceTransfer = new Set<Id>();
         Set<Id> setCaseClosedByOperationsForCardBlockRelease = new Set<Id>();
         Set<Id> setCaseRouteToServiceCenterFromBuyoutOperationsQueue = new Set<Id>();
-        //CH22: Start Commented by #Jahangeer Mohammed# #31-01-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-        //Set<Id> setCaseHRApproved  = new Set<Id>();
-        //CH22: END
         //CH22: Start
         Set<Id> setCaseRoutedToSignatureVerifierFromHR  = new Set<Id>();
         //CH22: END
@@ -387,9 +366,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         Set<Id> setCasesRouteToBuyoutQueueForBuyoutType = new Set<Id>();
         //CH10: END
         Set<Id> setCaseHRApprovedForReleaseLetter  = new Set<Id>();
-        //CH22: Start Commented by #Jahangeer Mohammed# #31-01-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-        //Set<Id> setCaseHRApprovedForNonBalTransfer  = new Set<Id>();
-        //CH22: END
         Set<Id> setCaseAcceptedByEvaluator = new Set<Id>();
         //CH38  Start
         Set<Id> setCaseProfileUpdate = new Set<Id>();
@@ -397,20 +373,14 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         //CH13: Start
         Set<Id> setCaseApprovedBySigVerifierForLimitIncrease = new Set<Id>();
         //CH24: Start
-        //Commented by #Jahangeer Mohammed# #10-02-2022# due to enhancement in Credit Card Limit increase Staff Application Process (NBA-4807).
-        //Set<Id> setCaseApprovedByHRForCreditLimitIncrease = new Set<Id>();
         Set<Id> setCaseRoutedToSignatureVerifierFromHRForLimitIncrease = new Set<Id>();
         //CH24 : END
         Set<Id> setCaseRoutedToSignatureVerifierFromHRForLimitIncreaseInApp = new Set<Id>();//#CH87
         Set<Id> setCasePendingForSMSReminders = new Set<Id>();
         Set<Id> setCasePendingForSignatureReminders = new Set<Id>();
         //CH13: END
-        //CH08 Start
-        //Set<Id> setCasesRoutedToCreditSignatureVerificationQueueFromCEO = new Set<Id>();
-        //CH08 END
         List<Case> caseLst = new List<Case>();
         //CH05: END
-        //Set<Id> setAccountID = new Set<Id>();
         //CH06: Start
         Set<Id> setCaseLimitIncrease  = new Set<Id>();
         //CH06: End
@@ -438,12 +408,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
             }
             //CH01: END
             //CH07: Start
-            /*if(recordtypeName == 'Credit Card Services' && caseObj.Status != 'Closed' && caseObj.Type == 'Credit Card Services' &&
-caseObj.Sub_Type__c == 'No due certificate' && caseObj.cc_Business_Approval_Result__c == 'Approve' &&
-caseObj.cc_Business_Approval_Result__c != caseOldObj.cc_Business_Approval_Result__c){
-System.debug('Inside No Due Certificate:'+caseObj.id);
-setCaseIdsForNoDueCertificatePdf.add(caseObj.id);
-}*/
             //CH09: END
             //CH85: Start
             if(recordtypeName == 'Credit Card Services' && caseObj.Status != caseOldObj.Status && caseObj.Status == 'Closed'){
@@ -480,11 +444,9 @@ setCaseIdsForNoDueCertificatePdf.add(caseObj.id);
             if(caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && caseObj.Sub_Status__c =='Documents Received' && caseObj.Region_Flag__c == 'Bahrain'  && ((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')  || (caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Sub_Type__c == 'New Supplementary Card') || (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')))
             {
                 setCaseDocReceived.add(caseObj.id);
-                //caseObj.OwnerId = system.Label.Credit_Card_Pre_Screener_Queue;
             }
             if( caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && (caseObj.Sub_Status__c =='Referred by Evaluator' || caseObj.Sub_Status__c =='Referred by Verifier' || caseObj.Sub_Status__c =='Referred by Approver' ) && ((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')))
             {
-                //setCaseReferred.add(caseObj.id);
             }
             System.debug('New Substatus:'+caseObj.Sub_Status__c);
             System.debug('Old Substatus:'+caseOldObj.Sub_Status__c);
@@ -530,8 +492,6 @@ setCaseIdsForNoDueCertificatePdf.add(caseObj.id);
                }
             System.debug('Pre screening Result:'+caseObj.cc_Credit_Pre_Screening_Result__c);
             System.debug('Old Pre screening Result:'+caseOldObj.cc_Credit_Pre_Screening_Result__c);
-            //System.debug('Old Sub Status:'+caseOldObj.Sub_Status__c);
-            //System.debug('New Sub Status:'+caseObj.Sub_Status__c);
             System.debug('Application Stage:'+caseObj.cc_Application_Stages__c);
             //CH55: Added Region Flag in if condition
             if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')|| (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) &&
@@ -645,12 +605,6 @@ setCaseIdsForNoDueCertificatePdf.add(caseObj.id);
                }
             /******************************************************************************************************************************/
             // to Limit Increase
-            /*if(caseObj.Type == 'Credit Limit Update' &&  caseObj.Sub_Type__c == 'Credit Limit Increase' &&
-caseObj.cc_Credit_Approval_Result__c == 'Approve' &&
-caseObj.cc_Credit_Approval_Result__c != caseOldObj.cc_Credit_Approval_Result__c){
-System.debug('Set Cases for Signature Verification Queue From Credit Approver');
-setCasesRoutedToCreditSignatureVerificationQueueFromApprover.add(caseObj.id);
-} */
             ////////////////////////// Start : Cases Routing to Credit Service Center when Credit Approval Result = 'Refer to Service Center' in CRM and Sending Status 'REFERRED' in API ///////////////////////////////////////
             //CH55: Added Region Flag in if condition
             if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) &&
@@ -663,16 +617,6 @@ setCasesRoutedToCreditSignatureVerificationQueueFromApprover.add(caseObj.id);
             ////////////////////////// END : Cases Routing to Credit Service Center when Credit Approval Result = 'Refer to Service Center' in CRM and Sending Status 'REFERRED' in API ///////////////////////////////////////
             /******************************************* CREDIT APPROVER RESULT END ***************************************************/
             /******************************************** CEO APPROVER RESULT START *****************************************************/
-            //CH08 Start
-            // Commented by Jahangeer Mohammed #05-10-2021 below code functionality has been done in CEO Flow
-            /*if(caseObj.Type == 'Credit Card Application' &&  caseObj.Sub_Type__c == 'New Credit Card' &&
-caseObj.cc_CEO_Result__c == 'Accept' &&
-caseObj.cc_CEO_Result__c != caseOldObj.cc_CEO_Result__c &&
-caseObj.cc_Application_Stages__c == 'Credit CEO'){
-System.debug('Set Cases for Signature Verification Queue From CEO');
-setCasesRoutedToCreditSignatureVerificationQueueFromCEO.add(caseObj.id);
-}*/
-            //CH08 END
             /******************************************** CEO APPROVER RESULT END *******************************************************/
             /******************************************* SIGNATURE VERIFIER RESULT START ***************************************************/
             //////// Start : When Signature Verifier Result = 'Accept' then cases are closed in CRM, If Approved Requested Card Type = ila Blue or ila Black and Sending Status as 'Approved' in API ////////////////////
@@ -803,14 +747,6 @@ setCasesRoutedToCreditSignatureVerificationQueueFromCEO.add(caseObj.id);
                }
             /******************************************* CREDIT SERVICE CENTER RESULT END ********************************************/
             /******************************************* CREDIT BUYOUT OPERATIONS START ****************************************************/
-            //Commented by Jahangeer Mohammed #12-10-2021# No need to call an API
-            /*if((caseObj.Type == 'Credit Card Application' &&  caseObj.Sub_Type__c == 'New Credit Card' &&
-caseObj.cc_Operations_Result__c == 'Balance Transfer Processed' && caseObj.cc_Operations_Result__c != caseOldObj.cc_Operations_Result__c &&
-caseObj.cc_Application_Stages__c == 'Credit Buyout' && caseObj.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' &&
-caseObj.cc_Approved_Transfer_Type__c == 'Balance Transfer')){
-System.debug('Set Cases Closed By Operations Team if RESULT is BALANCE TRANSFER PROCESSED');
-setCaseClosedByOperationsForBalanceTransfer.add(caseObj.id);
-}*/
             //CH55: Added Region Flag in if condition
             //CH74: Added Is_Balance_Transfer__c in if condition for Cobranded Cards
             if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')) &&
@@ -836,14 +772,6 @@ setCaseClosedByOperationsForBalanceTransfer.add(caseObj.id);
             System.debug('Case Type:'+caseObj.Type);
             System.debug('Case Sub Type:'+caseObj.Sub_Type__c);
             //CH22: Start
-            //Commented by #Jahangeer Mohammed# #31-01-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-            /*if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')) &&
-recordtypeName == 'Credit Card - Staff  Application' &&
-(caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && caseObj.cc_HR_Result__c =='Approved') && caseObj.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' && caseObj.cc_Approved_Transfer_Type__c == 'Balance Transfer')
-{
-System.debug('Set Cases for HR Approval Balance Transfer');
-setCaseHRApproved.add(caseObj.id);
-}*/
             //CH55: Added Region Flag in if condition
             if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')) &&
                recordtypeName == 'Credit Card - Staff  Application' && (caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && caseObj.cc_HR_Result__c =='Approved') && caseObj.Region_Flag__c == 'Bahrain')
@@ -863,16 +791,6 @@ setCaseHRApproved.add(caseObj.id);
             /******************************************* HR APPROVAL RESULT END FOR ILA SWITCH-BALANCE TRANSFER **************************************************************/
             /******************************************* HR APPROVAL RESULT START FOR ILA SWITCH-BUYOUT ***********************************************************************/
             //CH10: Start
-            //CH22: Start
-            //Commented by #Jahangeer Mohammed# #31-01-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-            /*if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')) &&
-recordtypeName == 'Credit Card - Staff  Application' &&
-(caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && caseObj.cc_HR_Result__c =='Approved') && caseObj.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' && caseObj.cc_Approved_Transfer_Type__c == 'Buy Out')
-{
-System.debug('Set Cases for HR Approval for Buyout');
-setCaseHRApprovedForBuyout.add(caseObj.id);
-}*/
-            //CH22:END
             //CH10: END
             /******************************************* HR APPROVAL RESULT END FOR ILA SWITCH-BUYOUT ***********************************************************************/
             /******************************************* HR APPROVAL RESULT START ACCEPT RELEASE LETTER **************************************************************/
@@ -888,27 +806,10 @@ setCaseHRApprovedForBuyout.add(caseObj.id);
             }
             /******************************************* HR APPROVAL RESULT END ACCEPT RELEASE LETTER **************************************************************/
             /******************************************* HR APPROVAL RESULT START FOR ILA BLUE/BLACK **************************************************************/
-            //CH22: Start
-            //Commented by #Jahangeer Mohammed# #02-02-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-            /* if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')) &&
-recordtypeName == 'Credit Card - Staff  Application' &&
-(caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && caseObj.cc_HR_Result__c =='Approved') && caseObj.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01' && caseObj.cc_Approved_Requested_Card_Type__c != '')
-{
-System.debug('Set Cases for HR Approval Non Balance Transfer');
-setCaseHRApprovedForNonBalTransfer.add(caseObj.id);
-}*/
-            //CH22:END
             /******************************************* HR APPROVAL RESULT END FOR ILA BLUE/BLACK **************************************************************/
             /******************************************* HR APPROVAL START FOR LIMIT UPDATE *******************************************************/
             //CH13: Start
             //CH24: Start
-            //Commented by #Jahangeer Mohammed# #10-02-2022# due to enhancement in Credit Card Limit increase Staff Application Process (NBA-4807).
-            /*if(((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && recordtypeName == 'Credit Limit Increase Staff' &&
-(caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && caseObj.cc_HR_Result__c =='Approved'))
-{
-System.debug('Set Cases for HR Approval in Credit Limit Update');
-setCaseApprovedByHRForCreditLimitIncrease.add(caseObj.id);
-}*/
             //CH55: Added Region Flag in if condition
             if(((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && recordtypeName == 'Credit Limit Increase Staff' &&
                (caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && caseObj.cc_HR_Result__c =='Approved') && caseObj.Region_Flag__c == 'Bahrain')
@@ -999,13 +900,13 @@ setCaseApprovedByHRForCreditLimitIncrease.add(caseObj.id);
             //CH13 : Start
             //CH26 : Commented by #Jahangeer Mohammed# #14-03-2022# related to Credit Card Application
             //CH55: Added Region Flag in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application' /*|| caseObj.Type == 'Credit Card Application'*/) && caseOldObj.cc_SMS_Sent_Flag__c != caseObj.cc_SMS_Sent_Flag__c && caseObj.cc_SMS_Sent_Flag__c == true && caseObj.Region_Flag__c == 'Bahrain' ){
+            if((caseObj.Type == 'Credit Limit Increase Application') && caseOldObj.cc_SMS_Sent_Flag__c != caseObj.cc_SMS_Sent_Flag__c && caseObj.cc_SMS_Sent_Flag__c == true && caseObj.Region_Flag__c == 'Bahrain' ){
                 setCasePendingForSMSReminders.add(caseObj.id);
             }
             //CH26 : Commented by #Jahangeer Mohammed# #14-03-2022# related to Credit Card Application
             //CH55: Added Region Flag in if condition
             //CH44 : Added by Jahangeer Mohammed #16-10-2022# related to 'Cash Collateral Credit Limit Increase Application' in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' /*|| caseObj.Type == 'Credit Card Application'*/) && caseOldObj.cc_signature_sms_sent_flag__c != caseObj.cc_signature_sms_sent_flag__c && caseObj.cc_signature_sms_sent_flag__c == true && caseObj.Region_Flag__c == 'Bahrain'){
+            if((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application') && caseOldObj.cc_signature_sms_sent_flag__c != caseObj.cc_signature_sms_sent_flag__c && caseObj.cc_signature_sms_sent_flag__c == true && caseObj.Region_Flag__c == 'Bahrain'){
                 setCasePendingForSignatureReminders.add(caseObj.id);
             }
             //CH13 : END
@@ -1170,13 +1071,6 @@ setCaseApprovedByHRForCreditLimitIncrease.add(caseObj.id);
                }
             //CH05 : END
             //CH06: Start
-            //CH13 : Commented by #Jahangeer Mohammed# 31-10-2021 as it has been covered in Credit Approval Result
-            /*if(caseObj.cc_Credit_Approval_Result__c =='Approve' && caseObj.Type =='Credit Limit Update' && caseObj.cc_Credit_Approval_Result__c != caseOldObj.cc_Credit_Approval_Result__c){
-setCaseLimitIncrease.add(caseObj.Id);
-}
-if(caseObj.cc_Signature_Verifier_Result__c =='Re-Send' && caseObj.Type =='Credit Limit Update' && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c){
-setCaseLimitIncrease.add(caseObj.Id);
-}*/
             //CH55: Added Region Flag in if condition
             //CH13: Start
             if(caseObj.cc_Signature_Verifier_Result__c =='Accept' && caseObj.Type =='Credit Limit Increase Application' && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c && caseObj.Region_Flag__c == 'Bahrain'){
@@ -1186,11 +1080,6 @@ setCaseLimitIncrease.add(caseObj.Id);
             //CH13: END
             //CH06: END
             ////////////////////////////////////// Updating Customer details on Contact Post Credit Evaluator Approval/ rejection on Case ///////////////////////////////////
-            //Commented by Jahangeer Mohammed on 28-06-2022 as per NBA-5692 & NBA-5693
-            /*if(caseObj.Type == 'Credit Card Application' &&  caseObj.Sub_Type__c == 'New Credit Card' && caseObj.cc_Credit_Verification_Result__c != caseOldObj.cc_Credit_Verification_Result__c && (caseObj.cc_Credit_Verification_Result__c == 'Approve' || caseObj.cc_Credit_Verification_Result__c == 'Decline'))
-{
-mapCasetoAccount.put(caseObj.Id, caseObj.AccountId);
-}*/
             //CH55: Added Region Flag in if condition
             //CH40: Start
             if(((caseObj.Type == 'Credit Card Application' &&  caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type =='Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && caseObj.cc_Credit_Approval_Result__c != caseOldObj.cc_Credit_Approval_Result__c && (caseObj.cc_Credit_Approval_Result__c == 'Approve' || caseObj.cc_Credit_Approval_Result__c == 'Decline') && caseObj.Region_Flag__c == 'Bahrain')
@@ -1298,23 +1187,13 @@ mapCasetoAccount.put(caseObj.Id, caseObj.AccountId);
         {
             initiateManualOnboarding.CCCaseUpdate(setCaseReferred);
         }
-        if(!setCaseDocDiscrepancies.isEmpty() /*&& !test.isRunningTest()*/)
+        if(!setCaseDocDiscrepancies.isEmpty())
         {
             System.debug('Discrepancy in Documents:'+setCaseDocDiscrepancies);
             initiateManualOnboarding.CCCaseUpdate(setCaseDocDiscrepancies);
         }
         //CH05: Start
         //CH22: Start
-        //Commented by #Jahangeer Mohammed# #02-02-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-        /*if(!setCaseHRApproved.isEmpty())
-{
-if(!test.isRunningTest()){
-DocuSignApexToolKit autoSendDocSign =  new DocuSignApexToolKit(setCaseHRApproved);
-System.enqueueJob(autoSendDocSign);
-}
-//CH02: End
-initiateManualOnboarding.CCCaseUpdate(setCaseHRApproved);
-}*/
         if(!setCaseRoutedToSignatureVerifierFromHR.isEmpty())
         {
             if(!test.isRunningTest()){
@@ -1356,14 +1235,6 @@ initiateManualOnboarding.CCCaseUpdate(setCaseHRApproved);
             System.debug('HR APPROVER --------> BUYOUT QUEUE:'+setCaseHRApprovedForReleaseLetter);
             initiateManualOnboarding.CCCaseUpdate(setCaseHRApprovedForReleaseLetter);
         }
-        //CH22: Start
-        //Commented by #Jahangeer Mohammed# #02-02-2022# due to enhancement in Credit Card Staff Application Process (NBA-4713).
-        /*if(!setCaseHRApprovedForNonBalTransfer.isEmpty()){
-//System.debug('HR APPROVER FOR NON Balance Transfer--------> BUYOUT QUEUE:'+setCaseHRApprovedForNonBalTransfer);
-System.debug('HR APPROVER FOR NON Balance Transfer--------> Close Case:'+setCaseHRApprovedForNonBalTransfer);
-initiateManualOnboarding.CCCaseUpdate(setCaseHRApprovedForNonBalTransfer);
-}*/
-        //CH22: END
         //CH05: END
         //CH02: Start
         if(!reSendDocSet.isEmpty() && !test.isRunningTest()){
@@ -1407,7 +1278,7 @@ initiateManualOnboarding.CCCaseUpdate(setCaseHRApprovedForNonBalTransfer);
             initiateManualOnboarding.CCCaseUpdate(setCaseRoutedFromPrescreenertoCreditRetention);
         }
         //CH50: END
-        if(!setCaseRoutedFromPrescreenerToServiceCenter.isEmpty() /*&& !test.isRunningTest()*/){
+        if(!setCaseRoutedFromPrescreenerToServiceCenter.isEmpty()){
             System.debug('Credit Card Pre screener----->Service Center Queue:'+setCaseRoutedFromPrescreenerToServiceCenter);
             initiateManualOnboarding.CCCaseUpdate(setCaseRoutedFromPrescreenerToServiceCenter);
         }
@@ -1447,26 +1318,6 @@ initiateManualOnboarding.CCCaseUpdate(setCaseHRApprovedForNonBalTransfer);
             cc_DocuSignGetEnvelopeId.cc_DocuSignGetEnvelopeIdProcess(setCasesRoutedToCreditSignatureVerificationQueueFromApproverInApp);
         }
         //#CH84 : End
-        //CH08: Start
-        //Commented by Jahangeer Mohammed
-        /*if(!setCasesRoutedToCreditSignatureVerificationQueueFromCEO.isEmpty()){
-System.debug('Credit Card CEO----->Signature Verification:'+setCasesRoutedToCreditSignatureVerificationQueueFromCEO);
-DocuSignApexToolKit autoSendDocSign =  new DocuSignApexToolKit(setCasesRoutedToCreditSignatureVerificationQueueFromCEO);
-System.enqueueJob(autoSendDocSign);
-initiateManualOnboarding.CCCaseUpdate(setCasesRoutedToCreditSignatureVerificationQueueFromCEO);
-}*/
-        //CH08: END
-        //CH06: Start
-        //CH13: Commented by #Jahangeer Mohammed# 31-10-2021 as it has been covered in Credit Approval Result
-        /*if(!setCaseLimitIncrease.isEmpty()){
-DocuSignApexToolKit autoSendDocSign =  new DocuSignApexToolKit(setCaseLimitIncrease);
-System.enqueueJob(autoSendDocSign);
-}*/
-        //CH06: End
-        /*if(!setCaseClosedByOperationsForBalanceTransfer.isEmpty()){
-System.debug('Credit Card Operations Balance Transfer:'+setCaseClosedByOperationsForBalanceTransfer);
-initiateManualOnboarding.CCCaseUpdate(setCaseClosedByOperationsForBalanceTransfer);
-}*/
         if(!setCaseRouteToServiceCenterFromBuyoutOperationsQueue.isEmpty()){
             System.debug('Credit Card Buyout Operations----->Service Center:'+setCaseRouteToServiceCenterFromBuyoutOperationsQueue);
             initiateManualOnboarding.CCCaseUpdate(setCaseRouteToServiceCenterFromBuyoutOperationsQueue);
@@ -1499,11 +1350,6 @@ initiateManualOnboarding.CCCaseUpdate(setCaseClosedByOperationsForBalanceTransfe
             initiateManualOnboarding.CCCaseUpdate(setCaseApprovedBySigVerifierForLimitIncrease);
         }
         //CH24: Start
-        //Commented by #Jahangeer Mohammed# #10-02-2022# due to enhancement in Credit Card Limit increase Staff Application Process (NBA-4807).
-        /*if(!setCaseApprovedByHRForCreditLimitIncrease.isEmpty()){
-System.debug('HR Approval for Limit Update:'+setCaseApprovedByHRForCreditLimitIncrease);
-initiateManualOnboarding.CCCaseUpdate(setCaseApprovedByHRForCreditLimitIncrease);
-}*/
         if(!setCaseRoutedToSignatureVerifierFromHRForLimitIncrease.isEmpty())
         {
             if(!test.isRunningTest()){
@@ -1601,13 +1447,6 @@ initiateManualOnboarding.CCCaseUpdate(setCaseApprovedByHRForCreditLimitIncrease)
             update caseLst;
         }
         //CH05: END
-        //CH07: Start
-        /* if(!setCaseIdsForNoDueCertificatePdf.isEmpty()){
-for(Id ids : setCaseIdsForNoDueCertificatePdf){
-creditCardNoDueCertificate.sendEmailWithPdf(ids);
-}
-}*/
-        //CH07: END
         if(!mapCasetoAccount.isEmpty())
         {
             creditCardCustomerProfileUpdate.updateCustomerdetails(mapCasetoAccount);
@@ -1620,12 +1459,10 @@ creditCardNoDueCertificate.sendEmailWithPdf(ids);
         //CH40: END
         System.debug('List Of Comments Outside Check recursive:'+lstComment.size());
         System.debug('Detail Of Comments Outside Check recursive:'+lstComment);
-        /*if(checkRecursive.runOnce()){*/ //Commented by Jahangeer Mohammed for Credit Verification Comments
         if(lstComment.size()>0){
             System.debug('List Of Comments inside Check recursive:'+lstComment.size());
             System.debug('Detail Of Comments inside Check recursive:'+lstComment);
             insert lstComment;
-            /*}*/
         }
         //CH73: Start
         if(!caseIdstoUpdate.isEmpty()) {
@@ -1702,7 +1539,6 @@ creditCardNoDueCertificate.sendEmailWithPdf(ids);
         Map<Id, String> caseToRegion = Util.getQueuesCustomMetadata(newRecs);
         // CH51 - Start
         List<History_Tracking__c> lstHistoryTracking = new list<History_Tracking__c>();
-        //Map<id,Case> caseOldMap = (Map<id,Case>)Trigger.oldMap;
         Map<id,Case> caseNewMap = (Map<id,Case>)Trigger.newMap;
         Map<id,User> mapIdUser = getActiveUserById();
         String FinalTrackingList = system.Label.HT_CaseObjectFields1 + ',' + system.Label.HT_CaseObjectFields2 + ',' + system.Label.HT_CaseObjectFields3 + ',' + system.Label.HT_CaseObjectFields4 + ',' + system.Label.HT_CaseObjectFields5;
@@ -1761,13 +1597,9 @@ creditCardNoDueCertificate.sendEmailWithPdf(ids);
             string recordtypeName = rt_Map.get(caseObj.RecordTypeId).getName();
             //CH21: END
             Case caseOldObj = (Case)trigger.oldMap.get(caseobj.id);
-            /*if(caseObj.cc_Is_Doc_Uploaded__c == true){
-caseObj.cc_Is_Doc_Uploaded__c = false;
-}*/
             if(caseObj.Awaiting_Customer_Feedback__c != caseOldObj.Awaiting_Customer_Feedback__c && caseObj.Awaiting_Customer_Feedback__c == true)
             {
                 caseObj.Date_Awaiting_Customer_Feedback__c = system.now();
-                //caseObj.cc_Customer_Response__c = 'Customer Not Responded';
             }
             //CH21: Start
             //CH33 : Added a condition for Credit Limit Increase Application.
@@ -1831,15 +1663,6 @@ caseObj.cc_Is_Doc_Uploaded__c = false;
                    }
                 //CH50: END
             }
-            //CH77: Start
-            /*if(caseObj.Type == 'New Loan / Finance Application' && caseObj.Sub_Type__c == 'New Loan / Finance Application Request' && caseObj.Region_Flag__c == 'Bahrain'){
-if(caseOldObj.cc_Credit_Approval_Result__c != caseObj.cc_Credit_Approval_Result__c
-&& (caseObj.cc_Credit_Approval_Result__c != '' || caseObj.cc_Credit_Approval_Result__c != null)){
-caseObj.Address_Updated_By__c = UserInfo.getUserId();
-System.debug('Inside Approver owner Updated by value On Loans');
-}
-}*/
-            //CH77: END
             //CH52: START
             //CH55: Added Region Flag in if condition
             if((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type == 'Credit Limit Increase Application') && caseObj.Region_Flag__c == 'Bahrain'){
@@ -1932,28 +1755,21 @@ System.debug('Inside Approver owner Updated by value On Loans');
             //CH28 : Added IsCashCollateral field in if condition
             //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
             //CH55: Added Region Flag in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain' /*&& caseObj.Is_Cash_Collateral__c == false*/ /*|| caseObj.Type == 'Credit Card Application'*/) && caseObj.cc_Application_Stages__c == 'New' && caseObj.Awaiting_Customer_Feedback__c != caseOldObj.Awaiting_Customer_Feedback__c && caseObj.Awaiting_Customer_Feedback__c == true)
+            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain') && caseObj.cc_Application_Stages__c == 'New' && caseObj.Awaiting_Customer_Feedback__c != caseOldObj.Awaiting_Customer_Feedback__c && caseObj.Awaiting_Customer_Feedback__c == true)
             {
-                //CH83: Commented the below line for NBA-15993 Queues Re-structuring
-                //caseObj.cc_Customer_Response__c = 'Customer Not Responded';
             }
             //CH26:Start Commented by Jahangeer Mohammed #13-03-2022# related to Credit Card Application
             //CH28 : Added IsCashCollateral field in if condition
             //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
             //CH55: Added Region Flag in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain' /*&& caseObj.Is_Cash_Collateral__c == false*/ /*|| caseObj.Type == 'Credit Card Application'*/) && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c && (caseObj.cc_Signature_Verifier_Result__c == 'Re-Send' || caseObj.cc_Signature_Verifier_Result__c == 'Refer to Service Center') && caseObj.Awaiting_Customer_Feedback__c == true)
+            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain') && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c && (caseObj.cc_Signature_Verifier_Result__c == 'Re-Send' || caseObj.cc_Signature_Verifier_Result__c == 'Refer to Service Center') && caseObj.Awaiting_Customer_Feedback__c == true)
             {
                 caseObj.Customer_Responded_for_Pending_Signature__c = 'Customer Not Responded';
                 caseObj.cc_Date_Awaiting_For_Pending_Signature__c = System.now();
             }
             //CH15: END
             //CH17: Start
-            //CH49: Commented by #Jahangeer Mohammed# #28-02-2023 due to Supplementary Reminder Flow
             //CH55: Added Region Flag in if condition
-            /*if( caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Region_Flag__c == 'Bahrain'  && caseObj.Awaiting_Customer_Feedback__c != caseOldObj.Awaiting_Customer_Feedback__c && caseObj.Awaiting_Customer_Feedback__c == true)
-{
-caseObj.cc_Customer_Response__c = 'Customer Not Responded';
-}*/
             //CH49: END
             //CH17: END
             //CH20 :Start Swapna Reddy
@@ -2068,7 +1884,7 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
             }
             //CH83: END
             //CH27: start Swapna
-            if(caseObj.RecordTypeId==system.Label.Premium_Retention_RecordType && caseObj.Status!='Closed' )//&& caseObj.Sub_Status__c != caseOldObj.Sub_Status__c)
+            if(caseObj.RecordTypeId==system.Label.Premium_Retention_RecordType && caseObj.Status!='Closed' )
             {
                 if( caseObj.Type == 'Premium Retention Application' && caseobj.ac_RequestedBy__c=='Customer' && caseObj.Status!='Closed'
                    && caseObj.Sub_Status__c!='Retained Without Discount' && caseObj.Sub_Status__c!='Retained With Discount' && caseObj.Sub_Status__c!='Downgraded'
@@ -2080,7 +1896,6 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                     caseObj.Sub_Status__c='Pending Exit Interview';
                     caseObj.Waiting_for_customer_feedback__c=true;
                     //CH64: End Tsioucha
-                    // PremiumRetentionController.createDiscountRequest(caseobj.Account.CIF__pc,caseobj.Account.Region_Flag__c);
                 }
                 if( caseObj.Type == 'Premium Retention Application' && caseobj.ac_RequestedBy__c=='Bank / CBB'
                    && caseObj.Sub_Status__c!='Retained Without Discount' && caseObj.Sub_Status__c!='Retained With Discount' && caseObj.Sub_Status__c!='Downgraded'
@@ -2097,7 +1912,7 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                 if((caseObj.cc_Contact_Centre_Result__c=='Request Discount' && caseObj.Type == 'Premium Retention Application' &&
                     caseObj.OwnerId==system.Label.Contact_Centre_Queue && caseObj.Sub_Status__c!='Pending Customer'  && caseObj.Sub_Status__c!='Pending Discount From Bank' && caseObj.cc_Contact_Centre_Date_Time__c==null)
                    ||(caseObj.cc_Contact_Centre_Result__c=='Request Discount' && caseObj.Type == 'Premium Retention Application' && caseObj.OwnerId==system.Label.temp_Queue && caseObj.Sub_Status__c=='Pending Customer' && !System.isFuture()
-                      /* && caseObj.cc_Contact_Centre_Date_Time__c==null */))
+                      ))
                     // CH43 -end
                 {
                     caseObj.OwnerId=system.Label.RMT_Queue_Id;
@@ -2127,7 +1942,6 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                     caseObj.Sub_Status__c='Pending Contact Center';
                     caseObj.OwnerId=system.Label.Contact_Centre_Queue;
                     caseObj.cc_Contact_Centre_Result__c='';
-                    // PremiumRetentionController.updateDiscountRequest(caseObj.Id,caseobj.Account.CIF__pc,caseobj.Account.Region_Flag__c);
                 }
                 if( caseObj.Type == 'Premium Retention Application' && caseObj.Status!='Closed' && caseObj.OwnerId==system.Label.Contact_Centre_Queue && caseObj.cc_Contact_Centre_Result__c=='Send to Sales Team')
                 {
@@ -2135,7 +1949,6 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                     caseObj.Sub_Status__c='Pending Sales Team';
                     caseObj.OwnerId=system.Label.Sales_Team;
                     caseObj.Sales_result__c='';
-                    // PremiumRetentionController.updateDiscountRequest(caseObj.Id,caseobj.Account.CIF__pc,caseobj.Account.Region_Flag__c);
                 }
                 if(caseObj.OwnerId==system.Label.RMT_Queue_Id && caseObj.Type == 'Premium Retention Application' && caseObj.RMT_Results__c=='Escalate to Business')
                 {
@@ -2147,7 +1960,6 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                 {
                     caseObj.OwnerId=system.Label.RMT_Queue_Id;
                     caseObj.Sub_Status__c='Pending Discount From Bank';
-                    //PremiumRetentionController.updateDiscountRequest(caseObj.Id,'Pending Discount From Bank',system.Label.RMT_Queue_Id,null,null,system.now(),null);
                 }
                 if(caseObj.OwnerId==system.Label.Business_Team && caseObj.Type == 'Premium Retention Application' && caseObj.Head_of_Business_Results__c=='Apply Discount & Wait For Customer')
                 {
@@ -2159,7 +1971,6 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                        || caseObj.Sub_Status__c=='Cancelled'))
                 {
                     caseObj.Status='Closed';
-                    // PremiumRetentionController.updateDiscountRequest(caseObj.Id,caseobj.Account.CIF__pc,caseobj.Account.Region_Flag__c);
                 }
                 if(caseObj.OwnerId==system.Label.RMT_Queue_Id && caseObj.Type == 'Premium Retention Application' && caseObj.RMT_Results__c=='Apply Discount & Wait For Customer')
                 {
@@ -2168,7 +1979,6 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                 }
                 if(caseObj.Type == 'Premium Retention Application' && caseObj.Status!='Closed' && caseObj.OwnerId==system.Label.temp_Queue &&
                    (caseObj.Sub_Status__c=='Pending Exit Interview' || caseObj.sub_Status__c=='Pending Discount From Bank'))
-                    // || caseObj.Sub_Status__c=='Pending Customer'))
                 {
                     caseObj.OwnerId=system.Label.Contact_Centre_Queue;
                     caseObj.Waiting_for_customer_feedback__c=false;
@@ -2176,13 +1986,11 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
             }
             if((caseObj.RecordTypeId==system.Label.Premium_Invitation_RecordTypeId || caseObj.RecordTypeId==system.Label.Service_request_record_type_id) && caseObj.Status!='Closed')
             {
-                //PremiumRetentionController.createDiscountRequest(caseobj.Account.CIF__pc,caseobj.Account.Region_Flag__c);
                 //CH74: Start Added a Subject in If condition
                 //CH82: Start Added a Subject Metal in if condition
                 if(caseObj.ownerId==system.Label.Invitation_temp_Queue && caseObj.Sub_Status__c=='Pending Customer' && caseObj.Waiting_for_customer_feedback__c==false && (caseObj.Subject != 'Premium Invitation Application - Co-Branded Credit Card' && caseObj.Subject != 'Premium Invitation Application - Ila World Elite' && caseObj.Subject != 'Premium Invitation Application - Ila World Elite Metal'))
                 {
                     caseObj.Waiting_for_customer_feedback__c=true;
-                    //PremiumRetentionController.createDiscountRequest(caseobj.Account.CIF__pc,caseobj.Account.Region_Flag__c);
                     PremiumRetentionController.updateDiscountRequest(caseObj.Id,'Pending Customer',system.Label.Invitation_temp_Queue,null,system.now(),null,null,'INVITATION');
                 }
                 //CH82: END
@@ -2232,21 +2040,9 @@ caseObj.cc_Customer_Response__c = 'Customer Not Responded';
                 }
                 //CH39:Stop
             }
-            /*if(caseObj.cc_Credit_Pre_Screening_Result__c != caseOldObj.cc_Credit_Pre_Screening_Result__c && caseObj.cc_Credit_Pre_Screening_Result__c == 'Discrepancy in Documents' &&  caseObj.Sub_Status__c == 'Discrepancies' &&  caseObj.cc_Application_Stages__c == 'Credit Pre-Screening' && ((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type == 'Credit Limit Update' && caseObj.Sub_Type__c == 'Credit Limit Increase'))){
-System.debug('Inside Discrepancy for Reminders');
-setCaseReminders.add(caseObj.id);
-caseObj.Activate_CreditCard_Reminders__c = true;
-}*/ //Commenting by Jahangeer Logic is taken Care in After Update Event Of Future Call
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             /////////////////////////////////////// Populating the 'User' who updates the Cutomer's Address  ////////////////////////////////////////////////
-            /* if(caseObj.Type == 'Address Change' && (caseObj.New_Mailing_Street__c != caseOldObj.New_Mailing_Street__c || caseObj.New_Mailing_City__c != caseOldObj.New_Mailing_City__c || caseObj.New_Mailing_Postcode_Block__c != caseOldObj.New_Mailing_Postcode_Block__c || caseObj.New_Mailing_Country__c != caseOldObj.New_Mailing_Country__c))
-{
-caseObj.Address_Updated_By__c = UserInfo.getUserId();
-} */
             // added by shashank
-            /*if(caseObj.cc_Maker__c =='Send To Checker' &&caseObj.cc_Maker__c !=caseOldObj.cc_Maker__c){
-caseObj.Address_Updated_By__c = UserInfo.getUserId();
-}*/
             if(caseObj.Type=='Credit Card Services' && caseObj.RecordTypeId == recordTypeId){
                 // added by shashank for makers capture in Credit Card Service
                 accountIds.add(caseObj.AccountId);
@@ -2305,20 +2101,18 @@ caseObj.Address_Updated_By__c = UserInfo.getUserId();
             //CH26 : Commented the condition for Credit Card Application by #Jahangeer Mohammed# #13-03-2022#
             //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
             //CH55: Added Region Flag in if condition
-            if((/*(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card')  ||*/ (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && caseObj.Sub_Status__c =='Documents Received' && caseObj.Region_Flag__c == 'Bahrain' /*&& caseObj.Is_Cash_Collateral__c == false*/)
+            if(((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && caseObj.Sub_Status__c =='Documents Received' && caseObj.Region_Flag__c == 'Bahrain')
             {
-                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_PRE_SCREENER_QUEUE); //caseObj.OwnerId = system.Label.Credit_Card_Pre_Screener_Queue;
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_PRE_SCREENER_QUEUE);
                 caseObj.cc_CRM_Stage__c = 'IN PROGRESS';
                 //CH19 : Start
                 caseObj.cc_Application_Stages__c = 'Credit Pre-Screening';
-                //CH28: Commented by Jahangeer Mohammed #04-04-2022# for Cash Collateral Limit Increase Application.
-                //caseObj.cc_Customer_Response__c = 'Customer Responded';
                 caseObj.Awaiting_Customer_Feedback__c = false;
                 //CH19 : END
             }
             //CH55: Added Region Flag in if condition
             if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && caseObj.Sub_Status__c =='Documents Received' && caseObj.Region_Flag__c == 'Bahrain'){
-                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_PRE_SCREENER_QUEUE); //caseObj.OwnerId = system.Label.Credit_Card_Pre_Screener_Queue;
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_PRE_SCREENER_QUEUE);
                 caseObj.cc_CRM_Stage__c = 'IN PROGRESS';
                 caseObj.cc_Application_Stages__c = 'Credit Pre-Screening';
                 caseObj.Awaiting_Customer_Feedback__c = false;
@@ -2328,12 +2122,12 @@ caseObj.Address_Updated_By__c = UserInfo.getUserId();
             if(caseObj.cc_Maker__c =='Send to Anti Attrition' && CaseOldMap.get(caseObj.Id).cc_Maker__c !=caseObj.cc_Maker__c ){
                 // assign to Send to Anti Attrition  Q
                 caseObj.Address_Updated_By__c = UserInfo.getUserId();
-                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_ANTI_ATTRITION);//caseObj.OwnerId = System.label.Credit_Card_Send_to_Anti_Attrition;
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_ANTI_ATTRITION);
                 caseObj.cc_Maker_Result_Date_Time__c = System.now();
             }
             if(caseObj.cc_Maker__c =='Send to Anti Attrition' && CaseOldMap.get(caseObj.Id).cc_Maker__c !=caseObj.cc_Maker__c ){
                 // assign to Send to Anti Attrition  Q
-                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_ANTI_ATTRITION);//caseObj.OwnerId = System.label.Credit_Card_Send_to_Anti_Attrition;
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_ANTI_ATTRITION);
                 caseObj.cc_Maker_Result_Date_Time__c = System.now();
             }
             if(CaseOldMap.get(caseObj.Id).cc_AntiAttritionResult__c !=caseObj.cc_AntiAttritionResult__c ){
@@ -2343,9 +2137,9 @@ caseObj.Address_Updated_By__c = UserInfo.getUserId();
                     caseObj.Sub_Status__c ='Declined';
                     caseObj.Status = 'Closed';
                 }else if(caseObj.cc_AntiAttritionResult__c =='Approve'){
-                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CONTACT_CENTRE_QUEUE); //caseObj.OwnerId = System.label.Contact_Centre_Queue;
+                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CONTACT_CENTRE_QUEUE);
                 }else if(caseObj.cc_AntiAttritionResult__c =='Return to Maker'){
-                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, MAKER_QUEUE);//caseObj.OwnerId = System.label.MakerQueue;
+                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, MAKER_QUEUE);
                     caseObj.cc_Maker__c = '';
                     if(caseObj.Address_Updated_By__c != UserInfo.getUserId()){
                         caseObj.Address_Updated_By__c =NULL;
@@ -2363,28 +2157,21 @@ caseObj.Address_Updated_By__c = UserInfo.getUserId();
                     caseObj.cc_CoolDownDate__c  = System.today();
                     caseObj.cc_Cool_Down_Period_For_Account_Closing__c = System.now();
                     caseObj.Sub_Status__c ='In-Progress';
-                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, VISIONPLUS_MANUAL_QUEUE);//caseObj.OwnerId=System.label.VisionPlusQueue;
+                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, VISIONPLUS_MANUAL_QUEUE);
                     caseObj.cc_Contact_Centre_Date_Time__c = System.now();
                 }
                 else if(caseObj.cc_Contact_Centre_Result__c =='Return to Anti Attrition'){
                     caseObj.Sub_Status__c ='In-Progress';
-                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_ANTI_ATTRITION); //caseObj.OwnerId=System.label.Credit_Card_Send_to_Anti_Attrition;
+                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_ANTI_ATTRITION);
                     caseObj.cc_Contact_Centre_Date_Time__c = System.now();
                 }
             }
             if(caseObj.cc_VisionPlus_Result__c =='Completed' && CaseOldMap.get(caseObj.Id).cc_VisionPlus_Result__c != caseObj.cc_VisionPlus_Result__c){
                 caseObj.cc_Waiting_for_Cooldown_Period__c =FALSE;
                 caseObj.Awaiting_Customer_Feedback__c=FALSE;
-                //caseObj.Sub_Status__c ='Approved';
                 caseObj.Sub_Status__c ='Completed';
                 caseObj.Status ='Closed';
             }
-            /*if(caseObj.cc_VisionPlus_Result__c =='Completed' && CaseOldMap.get(caseObj.Id).cc_VisionPlus_Result__c != caseObj.cc_VisionPlus_Result__c){
-caseObj.cc_Waiting_for_Cooldown_Period__c =FALSE;
-caseObj.Awaiting_Customer_Feedback__c=FALSE;
-caseObj.Sub_Status__c ='Approved';
-caseObj.Status ='Closed';
-}*/
             //CH04 End
             /////////////////////////////Second BHD Account Creation all the Case update the validation handling Starts here
             //CH38: Added a condition to Bypass Customer Profile Update Record Type in if condition
@@ -2394,7 +2181,7 @@ caseObj.Status ='Closed';
                 caseObj.Address_Updated_By__c = UserInfo.getUserId();
                 //CH75: Added Type != Credit Card Upgrade to Bypass this if condition for Split functionality
                 if(caseObj.Type!='Block Account' && caseObj.Type!='Unblock Account' && caseObj.Type != 'CBB Amount block/unblock request' && caseObj.Type != 'CBB Amount block/unblock request' && caseObj.Type != 'Account Maintenance' && caseObj.Type != 'New Bond/Sukuk Buy Request' && caseObj.Type != 'New Bond/Sukuk sell Request' && caseObj.Type != 'Sukuk/bonds/Government security' && caseObj.Type != 'Credit Card Upgrade' && (caseObj.cc_Request_Type__c != 'Staff Joiner' && caseObj.cc_Request_Type__c != 'Staff Leaver' && caseObj.RecordType_DeveloperName__c != 'Investment_Questionnaire_Review')){
-                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CHECKER_QUEUE); //caseObj.OwnerId = System.label.CheckerQueue;
+                    Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CHECKER_QUEUE);
                 }
                 //CH75: END
                 caseObj.cc_Maker_Result_Date_Time__c = System.now();
@@ -2425,8 +2212,6 @@ caseObj.Status ='Closed';
                    setSecondBHDAccount.add(caseObj.Id);
                    caseObj.cc_Checker_Result_Date_Time__c = System.now();
                    system.debug('Case Object--> Approve');
-                   //caseObj.Sub_Status__c = 'Approved';
-                   //caseObj.Status='Closed';
                }
             //CH62: END
             if(caseObj.cc_Checker_Result__c =='Reject' && CaseOldMap.get(caseObj.Id).cc_Checker_Result__c !=caseObj.cc_Checker_Result__c){
@@ -2445,16 +2230,15 @@ caseObj.Status ='Closed';
             //CH88: added RecordType_DeveloperName__c != 'Request' to Bypass Request RecordType
             //CH91: Added Type != 'Place Hold' to bypass the place hold maker/checker condition.
             if(caseObj.cc_Checker_Result__c =='Return to Maker' && caseObj.RecordTypeId!=system.Label.Credit_Collection_RecordType && caseObj.RecordTypeId!=system.Label.DormancyStatusRecordId && caseObj.RecordTypeId!=system.Label.Block_Unblock_Account_RecordType && caseObj.RecordTypeId!=system.Label.AIR_AccountInterestRate_RecordType && caseObj.Type != 'New Bond/Sukuk Buy Request' && caseObj.Type != 'New Bond/Sukuk sell Request' && caseObj.Type!='Sukuk/bonds/Government security'&& caseObj.Type != 'Place Hold' && CaseOldMap.get(caseObj.Id).cc_Checker_Result__c != caseObj.cc_Checker_Result__c && caseObj.RecordTypeId!=system.Label.Customer_Update_Profile_record_type_id
-               && (caseObj.Type != 'Funds Transfer' && caseObj.RecordType_DeveloperName__c != 'Request' && caseObj.RecordType_DeveloperName__c != 'Sukuk_Bond_Request') && caseObj.RecordType_DeveloperName__c != 'ppc_Prepaid_Card' && caseObj.RecordType_DeveloperName__c != 'Subscription_Model_Termination' /*&& caseObj.RecordType_DeveloperName__c != 'AmountBlockingUnblockingDirective'*/ && caseObj.Sub_Type__c != 'Alburaq Segment Change' && caseObj.Type != 'Credit Card Upgrade' && (caseObj.cc_Request_Type__c != 'Staff Joiner' && caseObj.cc_Request_Type__c != 'Staff Leaver' && caseObj.RecordType_DeveloperName__c != 'Investment_Questionnaire_Review'))
+               && (caseObj.Type != 'Funds Transfer' && caseObj.RecordType_DeveloperName__c != 'Request' && caseObj.RecordType_DeveloperName__c != 'Sukuk_Bond_Request') && caseObj.RecordType_DeveloperName__c != 'ppc_Prepaid_Card' && caseObj.RecordType_DeveloperName__c != 'Subscription_Model_Termination' && caseObj.Sub_Type__c != 'Alburaq Segment Change' && caseObj.Type != 'Credit Card Upgrade' && (caseObj.cc_Request_Type__c != 'Staff Joiner' && caseObj.cc_Request_Type__c != 'Staff Leaver' && caseObj.RecordType_DeveloperName__c != 'Investment_Questionnaire_Review'))
             {
                 system.debug('Return to Maker Changed...');
-                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, MAKER_QUEUE);//  caseObj.OwnerId = System.label.MakerQueue;
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, MAKER_QUEUE);
                 caseObj.cc_Maker__c ='';
                 if(caseObj.Address_Updated_By__c != UserInfo.getUserId()){
                     caseObj.Address_Updated_By__c =NULL;
                     system.debug('Case Object--> ID is NOT EQUAL');
                 }
-                //caseObj.cc_Checker_Result__c = '';
                 caseObj.cc_Checker_Result_Date_Time__c = System.now();
                 system.debug('Case Object--> Return to Maker');
             }
@@ -2483,11 +2267,6 @@ caseObj.Status ='Closed';
         if(lstHistoryTracking.size()>0)
             insert lstHistoryTracking;
         // CH51 - END
-        /*if(!setCaseReminders.isEmpty())
-{
-System.debug('Case Reminders:'+setCaseReminders);
-initiateManualOnboarding.CCCaseActivateReminders(setCaseReminders);
-}*/ //Commented by Jahangeer and taken care in After update Event of Future call
         if(!accountIds.isEmpty()){
             Map<Id,List<Case>> accIdsVsCaseList = new Map<Id,List<Case>>();
             for(Case cItem : [SELECT Id,cc_PCI_Id__c,Sub_Type__c,AccountId,CaseNumber FROM Case WHERE AccountId in:accountIds AND Status != 'Closed' AND cc_PCI_Id__c != NULL]){
@@ -2500,7 +2279,6 @@ initiateManualOnboarding.CCCaseActivateReminders(setCaseReminders);
                 if(accIdsVsCaseList.containsKey(newItem.AccountId)){
                     for(Case xItem: accIdsVsCaseList.get(newItem.AccountId)){
                         if(newItem.cc_PCI_Id__c == xItem.cc_PCI_Id__c && newItem.Id != xItem.Id && newItem.Sub_Type__c == xItem.Sub_Type__c){
-                            //newItem.addError('There is already a case '+xItem.CaseNumber+' open for '+xItem.Sub_Type__c+' for this credit card');
                             newItem.addError('A maximum of one '+ xItem.Sub_Type__c+' case can be open for the selected Card. Current case Open '+xItem.CaseNumber);
                         }
                     }
@@ -2518,7 +2296,6 @@ initiateManualOnboarding.CCCaseActivateReminders(setCaseReminders);
             //CH01: Start
             string recordtypeName = rt_map.get(cs.RecordTypeId).getName();
             if(recordtypeName == 'Manual Customer Archival'){
-                //cntIds.add(cs.ContactId);
             }
             if(cs.cc_Monthly_Income__c <= 500)
                 cs.cc_sys_Montly_Income__c = '500';
@@ -2555,8 +2332,6 @@ initiateManualOnboarding.CCCaseActivateReminders(setCaseReminders);
                     cs.cc_Approved_Balance_Transfer_Amount__c = cs.cc_Balance_Transfer_Amount__c;
                 if(cs.cc_Balance_Transfer_Type__c != null)
                     cs.cc_Approved_Transfer_Type__c = cs.cc_Balance_Transfer_Type__c;
-                /*if(cs.cc_CC_Application_Source__c != null)
-cs.cc_Consent_to_Query_Benefit_Credit__c = true;*/
                 //CH26: Start
                 if(cs.Sub_Status__c == 'Pending'){
                     System.debug('Before creation of Credit Card Case checking Last Sub status Change for Pending');
@@ -2583,7 +2358,6 @@ cs.cc_Consent_to_Query_Benefit_Credit__c = true;*/
             }
             //#CH84 : End
             accIdset.add(cs.AccountId);
-            //accIdset.add(cs.contactId);
         }
         System.debug('Account Id Set Size:'+accIdset.size());
         System.debug('Account Id is :'+accIdset);
