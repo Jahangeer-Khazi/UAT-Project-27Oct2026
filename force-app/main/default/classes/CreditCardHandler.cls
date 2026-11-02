@@ -8,6 +8,7 @@
 *                    All change markers (CH01-CH92) inside the method refer to the CaseHandler change history.
 *             #CH02# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah,
 *                    Customer Profile Update) back to CaseHandler.reStartManualOnboarding (CaseHandler #CH94#).
+*             #CH03# 02-11-2026# Moved the Credit Card logic of CaseHandler.setContact into creditCardApplicationInsert (CaseHandler #CH95#).
 */
 public without sharing class CreditCardHandler {
     /**
@@ -1089,5 +1090,57 @@ public without sharing class CreditCardHandler {
             CaseProcessingHandler.clearMakerCheckerComments(caseIdstoUpdate);
         }
         //CH73: End
+    }
+    public static void creditCardApplicationInsert(List<Case> newCaselist){
+        for(Case cs : newCaselist){
+            //CH25 : Added a condition for Credit Card Supplementary Application by #Jahangeer Mohammed #06-03-2022#
+            //CH55: Added Region Flag in if condition
+            if((cs.Type == 'Credit Card Application' && cs.Sub_Type__c == 'New Credit Card' && cs.Region_Flag__c == 'Bahrain') || (cs.Type == 'Credit Card Supplementary Application' && cs.Sub_Type__c == 'New Supplementary Card' && cs.Region_Flag__c == 'Bahrain') || test.isRunningTest()){
+                if(cs.cc_Requested_Card_Type__c != null &&  cs.cc_Requested_Card_Type__c != '')
+                    cs.cc_Approved_Requested_Card_Type__c = cs.cc_Requested_Card_Type__c;
+                if(cs.cc_Name_on_the_Card__c != null &&  cs.cc_Name_on_the_Card__c != '')
+                    cs.cc_Approved_Name_on_the_card__c = cs.cc_Name_on_the_Card__c;
+                if(cs.cc_Embossing_Line_4__c != null &&  cs.cc_Embossing_Line_4__c != '')
+                    cs.cc_Approved_Embossing_line_4__c = cs.cc_Embossing_Line_4__c;
+                if(cs.cc_Balance_Transfer_Card_Provider__c != null && cs.cc_Balance_Transfer_Card_Provider__c != '')
+                    cs.cc_Approved_Balance_Transfer_Card_Provi__c = cs.cc_Balance_Transfer_Card_Provider__c;
+                if(cs.cc_Balance_Transfer_Card_Number__c != null && cs.cc_Balance_Transfer_Card_Number__c != ''){
+                    cs.cc_Approved_Balance_Transfer_Card_Number__c = cs.cc_Balance_Transfer_Card_Number__c;
+                    cs.sys_Balance_Transfer_Card_Number__c = cs.cc_Balance_Transfer_Card_Number__c;
+                    if(cs.sys_Balance_Transfer_Card_Number__c != '' && cs.sys_Balance_Transfer_Card_Number__c != null){
+                        cs.cc_First_6_Digit__c = cs.sys_Balance_Transfer_Card_Number__c.substring(0,6);
+                        cs.cc_Last_4_Digit__c = cs.sys_Balance_Transfer_Card_Number__c.substring(12,16);
+                    }
+                }
+                if(cs.cc_Balance_Transfer_Amount__c != null)
+                    cs.cc_Approved_Balance_Transfer_Amount__c = cs.cc_Balance_Transfer_Amount__c;
+                if(cs.cc_Balance_Transfer_Type__c != null)
+                    cs.cc_Approved_Transfer_Type__c = cs.cc_Balance_Transfer_Type__c;
+                //CH26: Start
+                if(cs.Sub_Status__c == 'Pending'){
+                    System.debug('Before creation of Credit Card Case checking Last Sub status Change for Pending');
+                    cs.cc_Last_Sub_Status_Changed_Pending__c = 'Not Changed';
+                    cs.LastCaseSubStatusChanged__c = System.now();
+                }
+                //CH26: END
+            }
+            //CH66: Start
+            else if(cs.Type == 'Credit Limit Increase Application' && cs.Sub_Type__c == 'Credit Limit Increase' && cs.Region_Flag__c == 'Bahrain'){
+                if(cs.Sub_Status__c == 'Pending'){
+                    System.debug('Before creation of Credit Card Limit Increase Case checking Last Sub status Change for Pending');
+                    cs.cc_Last_Sub_Status_Changed_Pending__c = 'Not Changed';
+                    cs.LastCaseSubStatusChanged__c = System.now();
+                }
+                if(cs.cc_Requested_Card_Type__c != null &&  cs.cc_Requested_Card_Type__c != '')
+                    cs.cc_Approved_Requested_Card_Type__c = cs.cc_Requested_Card_Type__c;
+            }
+            //CH66: END
+            //#CH84 : Start
+            if( cs.Region_Flag__c == 'Bahrain' && ( cs.Type == 'Credit Card Application' || cs.Type == 'Credit Limit Increase Application' || cs.Type == 'Credit Card Cash Collateral Application' || cs.Type == 'Cash Collateral Credit Limit Increase Application') )
+            {
+                cs.Resend_DocuSign__c = System.Label.Default_Resend_DocuSign;//'In-App'
+            }
+            //#CH84 : End
+        }
     }
 }
