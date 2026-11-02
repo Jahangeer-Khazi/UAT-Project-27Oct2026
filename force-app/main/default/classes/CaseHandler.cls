@@ -96,9 +96,9 @@
 #CH90# #Jahangeer Mohammed# 28-08-2026# Added Logic for Making Comments Blank for Credit Card Upgrade(UATNB-228941)
 #CH91# #Maksud Ali 31-08-2026# Added logic for Maker/checker for Place Hold ticket.
 #CH92# #Ranjith Raja 14-10-2026# Added logic for Jordan Credit Card Insurance Monthly Fee.
-#CH93# 01-11-2026# Moved reStartManualOnboarding method to the new support class CreditCardHandler and renamed it to creditCardApplicationUpdate (logic unchanged).
-#CH94# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah, Customer Profile Update) from CreditCardHandler back into reStartManualOnboarding (logic unchanged).
-#CH95# 02-11-2026# Moved the Credit Card logic of setContact (CH25/CH26/CH55/CH66/CH84) to CreditCardHandler.creditCardApplicationInsert (logic unchanged).
+#CH93# #Jahangeer Mohammed# 01-11-2026# Moved reStartManualOnboarding method to the new support class CreditCardHandler and renamed it to creditCardApplicationUpdate (logic unchanged).
+#CH94# #Jahangeer Mohammed# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah, Customer Profile Update) from CreditCardHandler back into reStartManualOnboarding (logic unchanged).
+#CH95# #Jahangeer Mohammed# 02-11-2026# Moved the Credit Card logic of setContact (CH25/CH26/CH55/CH66/CH84) to CreditCardHandler.creditCardApplicationInsert (logic unchanged).
 */
 public without sharing class CaseHandler extends BaseTriggerHandler {
     private static final String  CONTACT_CENTRE_QUEUE = 'Contact Centre';
@@ -149,18 +149,7 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         InvestmentQuestionnaireHandler.handlerBeforeCaseCreation((List<Case>)Trigger.new);
         //CH62: END
         creditCardListController.handleBeforeCaseCreation(Trigger.new);
-        //CH92: Start
-        List<Case> newCases = (List<Case>) Trigger.new;
-        List<Case> creditCardCases = new List<Case>();
-        for (Case cs: newCases) {
-            if (cs.RecordType_DeveloperName__c == 'Credit_Card') {
-                creditCardCases.add(cs);
-            }
-        }
-        if (!creditCardCases.isEmpty()) {
-            CaseCCInsuranceDefaultHandler.setDefaultCCInsurance(creditCardCases);
-        }
-        //CH92: End
+       
     }
     override public void beforeUpdate () {
         before_UpdateDML((List<Case>)Trigger.new);
@@ -206,6 +195,17 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         //CH81: Start
         CreditCardUpgradeHandler.handlerAfterCaseCreation((List<Case>)Trigger.new);
         //CH81: END
+        //CH92: Start
+        List<Case> creditCardCases = new List<Case>();
+        for (Case cs : (List<Case>) Trigger.new) {
+            if (cs.RecordType_DeveloperName__c == 'Credit_Card') {
+                creditCardCases.add(cs);
+            }
+        }
+        if (!creditCardCases.isEmpty()) {
+            CaseCCInsuranceDefaultHandler.setDefaultCCInsurance(creditCardCases);
+        }
+        //CH92: End
     }
     override public void afterUpdate () {
         reStartManualOnboarding((List<Case>)Trigger.new); //CH94
