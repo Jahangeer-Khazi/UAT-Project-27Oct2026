@@ -10,6 +10,7 @@
     <trackHistory>false</trackHistory>
     <type>Picklist</type>
     <valueSet>
+        <controllingField>Region_Flag__c</controllingField>
         <restricted>true</restricted>
         <valueSetDefinition>
             <sorted>false</sorted>
@@ -23,6 +24,34 @@
                 <default>false</default>
                 <label>Email</label>
             </value>
+            <value>
+                <fullName>Digital Signature</fullName>
+                <default>false</default>
+                <label>Digital Signature</label>
+            </value>
+            <value>
+                <fullName>Docusign</fullName>
+                <default>false</default>
+                <label>Docusign</label>
+            </value>
         </valueSetDefinition>
+        <valueSettings>
+            <controllingFieldValue>Bahrain</controllingFieldValue>
+            <controllingFieldValue>Jordan</controllingFieldValue>
+            <valueName>In-App</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Bahrain</controllingFieldValue>
+            <controllingFieldValue>Jordan</controllingFieldValue>
+            <valueName>Email</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Jordan</controllingFieldValue>
+            <valueName>Digital Signature</valueName>
+        </valueSettings>
+        <valueSettings>
+            <controllingFieldValue>Jordan</controllingFieldValue>
+            <valueName>Docusign</valueName>
+        </valueSettings>
     </valueSet>
 </CustomField>

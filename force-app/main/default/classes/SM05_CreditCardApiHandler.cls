@@ -8,6 +8,7 @@
               #CH03 : #Imane Tsioucha# #22-02-2024# add x-canary header
               #CH04 : #Aniss Mbarki# #05-08-2024# ADD Alias_account__c Logic
  			  #CH05# #Jahangeer Mohammed #08-04-2026# Added Logic for Jordan Balance Transfer Process(NBA-15608)
+              #CH06# #Jahangeer Mohammed #02-11-2026# Added Logic for Jordan Credit Card Digital Signature(NBA-16140)
 */
 public without sharing class SM05_CreditCardApiHandler {
     
@@ -863,7 +864,20 @@ public without sharing class SM05_CreditCardApiHandler {
         if( caseObj.cc_Approved_Transfer_Type__c == null ){
             caseObj.cc_Approved_Transfer_Type__c = caseObj.cc_Balance_Transfer_Type__c;
         }
-        
+
+        //CH06: Start : Signing method based on Region and Customer Segment
+        if(String.isNotBlank(caseObj.Region_Flag__c) && String.isNotBlank(caseObj.Customer_Segment__c)){
+            List<CC_Signing_Method_Mapping__mdt> signingMappings = [SELECT Signing_Type__c
+                                                                     FROM CC_Signing_Method_Mapping__mdt
+                                                                     WHERE Region_Flag__c = :caseObj.Region_Flag__c
+                                                                     AND Segment__c = :caseObj.Customer_Segment__c
+                                                                     LIMIT 1];
+            if(!signingMappings.isEmpty() && String.isNotBlank(signingMappings[0].Signing_Type__c)){
+                caseObj.Resend_DocuSign__c = signingMappings[0].Signing_Type__c;
+            }
+        }
+        //CH06: End : Signing method based on Region and Customer Segment
+
         return caseObj;
     }
     
