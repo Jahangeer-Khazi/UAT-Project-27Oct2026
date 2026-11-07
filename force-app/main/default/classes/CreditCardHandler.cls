@@ -1425,4 +1425,57 @@ public without sharing class CreditCardHandler {
             }
             //CH83: END
     }
+    public static void CCRequestCreation(final List<Case> newRecs) {
+        Set<Id> setCaseStaffInprog  = new Set<Id>();
+        Set<Id> setCaseDocReceived  = new Set<Id>();
+        Set<Id> setSuppCasePending  = new Set<Id>();
+        //CH40: Start
+        Set<Id> setCashCollateralLMTIncreaseDocsReceived = new Set<Id>();
+        //CH40: END
+        for(Case caseObj : newRecs) {
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.cc_Requested_Card_Type__c != '' && caseObj.Sub_Type__c == 'New Credit Card' && (caseObj.Sub_Status__c == 'In-Progress' || caseObj.Sub_Status__c == 'Pending') && caseObj.Region_Flag__c == 'Bahrain')
+            {
+                setCaseStaffInprog.add(caseObj.id);
+            }
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.cc_Requested_Card_Type__c != '' && caseObj.Sub_Type__c == 'New Credit Card' && caseObj.Sub_Status__c == 'Documents Received' && caseObj.Region_Flag__c == 'Bahrain')
+            {
+                setCaseDocReceived.add(caseObj.id);
+            }
+            //CH13: Start
+            //CH55: Added Region Flag in if condition
+            if(((caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Sub_Type__c == 'New Supplementary Card') || (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && (caseObj.Sub_Status__c == 'Pending' || caseObj.Sub_Status__c == 'In-Progress') && caseObj.Region_Flag__c == 'Bahrain' )
+            {
+                setSuppCasePending.add(caseObj.id);
+            }
+            //CH13: END
+            //CH40: Start
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase' && caseObj.Sub_Status__c == 'Documents Received' && caseObj.Region_Flag__c == 'Bahrain'){
+                setCashCollateralLMTIncreaseDocsReceived.add(caseObj.id);
+            }
+            //CH40: END
+        }
+        if(!setCaseStaffInprog.isEmpty() && !test.isRunningTest())
+        {
+            initiateManualOnboarding.CCCaseCreation(setCaseStaffInprog);
+        }
+        if(!setCaseDocReceived.isEmpty() && !test.isRunningTest())
+        {
+            initiateManualOnboarding.CCCaseCreation(setCaseDocReceived);
+        }
+        if(!setSuppCasePending.isEmpty())
+        {
+            System.debug('Inside Credit Limit Update and Supplementary Cards:'+setSuppCasePending);
+            initiateManualOnboarding.CCCaseCreation(setSuppCasePending);
+        }
+        //CH40: Start
+        if(!setCashCollateralLMTIncreaseDocsReceived.isEmpty())
+        {
+            System.debug('CASH COLLATERAL LMT INCREASE DOCS RECEIVED:'+setCashCollateralLMTIncreaseDocsReceived);
+            initiateManualOnboarding.CCCaseCreation(setCashCollateralLMTIncreaseDocsReceived);
+        }
+        //CH40: END
+    }
 }

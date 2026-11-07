@@ -101,6 +101,7 @@
 #CH95# #Jahangeer Mohammed# 02-11-2026# Moved the Credit Card logic of setContact (CH25/CH26/CH55/CH66/CH84) to CreditCardHandler.creditCardApplicationInsert (logic unchanged).
 #CH96# #Jahangeer Mohammed# 07-11-2026# Moved the Credit Card logic of before_UpdateDML (CH21/CH33/CH50/CH52/CH65/CH26/CH66/CH15 and CH46/CH32/CH11) to CreditCardHandler.creditCardBeforeUpdate and creditCardBeforeUpdateRouting, called from the same place in the loop (logic unchanged).
 #CH97# #Jahangeer Mohammed# 07-11-2026# Moved the Credit Card customer response logic of before_UpdateDML (CH15/CH26/CH83/CH17 and CH83 Email Sent/Received) to CreditCardHandler.creditCardEmailReceivedResponse and creditCardEmailStatusResponse, called from the same place (logic unchanged).
+#CH98# #Jahangeer Mohammed# 07-11-2026# Moved CCRequestCreation method to CreditCardHandler (logic unchanged).
 */
 public without sharing class CaseHandler extends BaseTriggerHandler {
     private static final String  CONTACT_CENTRE_QUEUE = 'Contact Centre';
@@ -184,7 +185,7 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
         creditCardListController.handleCancelBalanceTransferPlanMaker((List<Case>)Trigger.new, (Map<Id,Case>)Trigger.oldMap);
     }
     override public void afterInsert () {
-        CCRequestCreation((List<Case>)Trigger.new);
+        CreditCardHandler.CCRequestCreation((List<Case>)Trigger.new); //CH98
         //CH16: Start
         CashCollateralHandler.handlerAfterCaseCreation((List<Case>)Trigger.new);
         //CH16: END
@@ -408,59 +409,6 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
             initiateManualOnboarding.stopJamiyahCase(setCaseStopJamiyah);
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    }
-    private static void CCRequestCreation(final List<Case> newRecs) {
-        Set<Id> setCaseStaffInprog  = new Set<Id>();
-        Set<Id> setCaseDocReceived  = new Set<Id>();
-        Set<Id> setSuppCasePending  = new Set<Id>();
-        //CH40: Start
-        Set<Id> setCashCollateralLMTIncreaseDocsReceived = new Set<Id>();
-        //CH40: END
-        for(Case caseObj : newRecs) {
-            //CH55: Added Region Flag in if condition
-            if(caseObj.Type == 'Credit Card Application' && caseObj.cc_Requested_Card_Type__c != '' && caseObj.Sub_Type__c == 'New Credit Card' && (caseObj.Sub_Status__c == 'In-Progress' || caseObj.Sub_Status__c == 'Pending') && caseObj.Region_Flag__c == 'Bahrain')
-            {
-                setCaseStaffInprog.add(caseObj.id);
-            }
-            //CH55: Added Region Flag in if condition
-            if(caseObj.Type == 'Credit Card Application' && caseObj.cc_Requested_Card_Type__c != '' && caseObj.Sub_Type__c == 'New Credit Card' && caseObj.Sub_Status__c == 'Documents Received' && caseObj.Region_Flag__c == 'Bahrain')
-            {
-                setCaseDocReceived.add(caseObj.id);
-            }
-            //CH13: Start
-            //CH55: Added Region Flag in if condition
-            if(((caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Sub_Type__c == 'New Supplementary Card') || (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && (caseObj.Sub_Status__c == 'Pending' || caseObj.Sub_Status__c == 'In-Progress') && caseObj.Region_Flag__c == 'Bahrain' )
-            {
-                setSuppCasePending.add(caseObj.id);
-            }
-            //CH13: END
-            //CH40: Start
-            //CH55: Added Region Flag in if condition
-            if(caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase' && caseObj.Sub_Status__c == 'Documents Received' && caseObj.Region_Flag__c == 'Bahrain'){
-                setCashCollateralLMTIncreaseDocsReceived.add(caseObj.id);
-            }
-            //CH40: END
-        }
-        if(!setCaseStaffInprog.isEmpty() && !test.isRunningTest())
-        {
-            initiateManualOnboarding.CCCaseCreation(setCaseStaffInprog);
-        }
-        if(!setCaseDocReceived.isEmpty() && !test.isRunningTest())
-        {
-            initiateManualOnboarding.CCCaseCreation(setCaseDocReceived);
-        }
-        if(!setSuppCasePending.isEmpty())
-        {
-            System.debug('Inside Credit Limit Update and Supplementary Cards:'+setSuppCasePending);
-            initiateManualOnboarding.CCCaseCreation(setSuppCasePending);
-        }
-        //CH40: Start
-        if(!setCashCollateralLMTIncreaseDocsReceived.isEmpty())
-        {
-            System.debug('CASH COLLATERAL LMT INCREASE DOCS RECEIVED:'+setCashCollateralLMTIncreaseDocsReceived);
-            initiateManualOnboarding.CCCaseCreation(setCashCollateralLMTIncreaseDocsReceived);
-        }
-        //CH40: END
     }
     private static void before_UpdateDML(final List<Case> newRecs)
     {
