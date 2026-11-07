@@ -9,8 +9,10 @@
 *             #CH02# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah,
 *                    Customer Profile Update) back to CaseHandler.reStartManualOnboarding (CaseHandler #CH94#).
 *             #CH03# 02-11-2026# Moved the Credit Card logic of CaseHandler.setContact into creditCardApplicationInsert (CaseHandler #CH95#).
+*             #CH04# 07-11-2026# Moved the Credit Card logic of CaseHandler.before_UpdateDML into creditCardBeforeUpdate and creditCardBeforeUpdateRouting (CaseHandler #CH96#).
 */
 public without sharing class CreditCardHandler {
+    private static final String  CREDIT_CARD_PRE_SCREENER_QUEUE = 'Credit Card Pre-Screener Queue';
     /**
     * @description After-update processing for Case records (moved from CaseHandler).
     * @param newRecs  Trigger.new  - updated Case records
@@ -1142,5 +1144,237 @@ public without sharing class CreditCardHandler {
             }
             //#CH84 : End
         }
+    }
+    public static void creditCardBeforeUpdate(Case caseObj, Case caseOldObj){
+            //CH21: Start
+            //CH33 : Added a condition for Credit Limit Increase Application.
+            //CH55: Added Region Flag in if condition
+            if(((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type == 'Credit Limit Increase Application')) && caseObj.Region_Flag__c == 'Bahrain' && checkRecursive.runOnce()){
+                if(caseOldObj.cc_Credit_Pre_Screening_Result__c != caseObj.cc_Credit_Pre_Screening_Result__c
+                   && (caseObj.cc_Credit_Pre_Screening_Result__c != '' || caseObj.cc_Credit_Pre_Screening_Result__c != null )){
+                       caseObj.cc_Credit_Pre_Screening_by__c = UserInfo.getUserId();
+                       System.debug('Inside Pre-screener owner Updated by value');
+                   }
+                if(caseOldObj.cc_Credit_Evaluation_Result__c != caseObj.cc_Credit_Evaluation_Result__c
+                   && (caseObj.cc_Credit_Evaluation_Result__c != '' || caseObj.cc_Credit_Evaluation_Result__c != null)){
+                       caseObj.cc_Credit_Evaluation_by__c = UserInfo.getUserId();
+                       System.debug('Inside Evaluator owner Updated by value');
+                   }
+                if(caseOldObj.cc_Credit_Verification_Result__c != caseObj.cc_Credit_Verification_Result__c
+                   && (caseObj.cc_Credit_Verification_Result__c != '' || caseObj.cc_Credit_Verification_Result__c != null)){
+                       caseObj.cc_Credit_Verified_by__c = UserInfo.getUserId();
+                       System.debug('Inside verifier owner Updated by value');
+                   }
+                if(caseOldObj.cc_Credit_Approval_Result__c != caseObj.cc_Credit_Approval_Result__c
+                   && (caseObj.cc_Credit_Approval_Result__c != '' || caseObj.cc_Credit_Approval_Result__c != null)){
+                       caseObj.cc_Credit_Approved_by__c = UserInfo.getUserId();
+                       System.debug('Inside Approver owner Updated by value');
+                   }
+                if(caseOldObj.cc_Business_Approval_Result__c != caseObj.cc_Business_Approval_Result__c
+                   && (caseObj.cc_Business_Approval_Result__c != '' || caseObj.cc_Business_Approval_Result__c != null)){
+                       caseObj.cc_Business_Approval_by__c = UserInfo.getUserId();
+                       System.debug('Inside Business owner Updated by value');
+                   }
+                if(caseOldObj.cc_CEO_Result__c != caseObj.cc_CEO_Result__c
+                   && (caseObj.cc_CEO_Result__c != '' || caseObj.cc_CEO_Result__c != null)){
+                       caseObj.cc_CEO_Result_by__c = UserInfo.getUserId();
+                       System.debug('Inside CEO owner Updated by value');
+                   }
+                if(caseOldObj.cc_Service_Centre_Result__c != caseObj.cc_Service_Centre_Result__c
+                   && (caseObj.cc_Service_Centre_Result__c != '' || caseObj.cc_Service_Centre_Result__c != null)){
+                       caseObj.cc_Service_Centre_by__c = UserInfo.getUserId();
+                       System.debug('Inside Service center owner Updated by value');
+                   }
+                if(caseOldObj.cc_Signature_Verifier_Result__c != caseObj.cc_Signature_Verifier_Result__c
+                   && (caseObj.cc_Signature_Verifier_Result__c != '' || caseObj.cc_Signature_Verifier_Result__c != null)){
+                       caseObj.cc_Signature_Verifier_by__c = UserInfo.getUserId();
+                       System.debug('Inside signature verifier owner Updated by value');
+                   }
+                if(caseOldObj.cc_Operations_Result__c != caseObj.cc_Operations_Result__c
+                   && (caseObj.cc_Operations_Result__c != '' || caseObj.cc_Operations_Result__c != null)){
+                       caseObj.cc_Operation_by__c = UserInfo.getUserId();
+                       System.debug('Inside operations owner Updated by value');
+                   }
+                if(caseOldObj.cc_Contact_Centre_Result__c != caseObj.cc_Contact_Centre_Result__c
+                   && (caseObj.cc_Contact_Centre_Result__c != '' || caseObj.cc_Contact_Centre_Result__c != null)){
+                       caseObj.cc_Contact_Center_by__c = UserInfo.getUserId();
+                       System.debug('Inside contact center owner Updated by value');
+                   }
+                //CH50: Start
+                if(caseOldObj.Credit_Retention_Result__c != caseObj.Credit_Retention_Result__c
+                   && (caseObj.Credit_Retention_Result__c != '' || caseObj.Credit_Retention_Result__c != null)){
+                       caseObj.Retention_Result_Updated_by__c = UserInfo.getUserId();
+                       System.debug('Inside Retention owner Updated by value');
+                   }
+                //CH50: END
+            }
+            //CH52: START
+            //CH55: Added Region Flag in if condition
+            if((caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card') || (caseObj.Type == 'Credit Limit Increase Application') && caseObj.Region_Flag__c == 'Bahrain'){
+                if(caseObj.Basic_Salary__c == null){
+                    caseObj.Basic_Salary__c = 0;
+                }
+                if(caseObj.Fixed_Allowances__c == null){
+                    caseObj.Fixed_Allowances__c = 0;
+                }
+                if(caseObj.Variable_Allowances__c == null){
+                    caseObj.Variable_Allowances__c = 0;
+                }
+                if(caseObj.Business_Income__c == null){
+                    caseObj.Business_Income__c = 0;
+                }
+                if(caseOldObj.Basic_Salary__c != caseObj.Basic_Salary__c || caseOldObj.Fixed_Allowances__c != caseObj.Fixed_Allowances__c || caseOldObj.Variable_Allowances__c != caseObj.Variable_Allowances__c || caseOldObj.Business_Income__c != caseObj.Business_Income__c){
+                    caseObj.cc_Approved_Salary__c=caseObj.Basic_Salary__c + caseObj.Fixed_Allowances__c + caseObj.Variable_Allowances__c + caseObj.Business_Income__c;
+                }
+                if(caseObj.cc_Approved_Salary__c == 0){
+                    caseObj.cc_Final_DBR__c = 0;
+                }else{
+                    caseObj.cc_Final_DBR__c = (caseObj.Final_Total_Obligations__c/ caseObj.cc_Approved_Salary__c)*100;
+                }
+                //CH52: END
+                //CH65: Start
+                if(caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c && caseObj.cc_Credit_Bureau_Score__c > 850){
+                    caseObj.addError('cc_Credit_Bureau_Score__c','Credit Score should be greater than or equal to 300 and less than or equal to 850');
+                }
+                else if(caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c && caseObj.cc_Credit_Bureau_Score__c < 300 && caseObj.cc_Credit_Bureau_Score__c > 0){
+                    caseObj.addError('cc_Credit_Bureau_Score__c','Credit Score should be greater than or equal to 300 and less than or equal to 850');
+                }
+                else if(caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c && caseObj.cc_Credit_Bureau_Score__c == 0){
+                    caseObj.cc_Credit_Bureau_Risk_Rating__c = '';
+                }
+                if(caseObj.cc_Credit_Bureau_Score__c >= 300 && caseObj.cc_Credit_Bureau_Score__c <= 449 && caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c){
+                    caseObj.cc_Credit_Bureau_Risk_Rating__c = 'High Risk 300-450';
+                }
+                else if(caseObj.cc_Credit_Bureau_Score__c >= 450 && caseObj.cc_Credit_Bureau_Score__c <= 549 && caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c){
+                    caseObj.cc_Credit_Bureau_Risk_Rating__c = 'Medium to High Risk 450-550';
+                }
+                else if(caseObj.cc_Credit_Bureau_Score__c >= 550 && caseObj.cc_Credit_Bureau_Score__c <= 649 && caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c){
+                    caseObj.cc_Credit_Bureau_Risk_Rating__c = 'Medium Risk 550-650';
+                }
+                else if(caseObj.cc_Credit_Bureau_Score__c >= 650 && caseObj.cc_Credit_Bureau_Score__c <= 749 && caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c){
+                    caseObj.cc_Credit_Bureau_Risk_Rating__c = 'Medium to Low Risk 650-750';
+                }
+                else if(caseObj.cc_Credit_Bureau_Score__c >= 750 && caseObj.cc_Credit_Bureau_Score__c <= 850 && caseOldObj.cc_Credit_Bureau_Score__c != caseObj.cc_Credit_Bureau_Score__c){
+                    caseObj.cc_Credit_Bureau_Risk_Rating__c = 'Low Risk 750-850';
+                }
+                else if(caseObj.cc_Credit_Bureau_Score__c == 0 && caseObj.cc_Credit_Bureau_Risk_Rating__c != 'Zero Score - 1st Facility' && caseObj.cc_Credit_Bureau_Risk_Rating__c != 'Zero Score - With Credit History' && caseObj.cc_Credit_Bureau_Risk_Rating__c != '' && caseObj.cc_Credit_Bureau_Risk_Rating__c != caseOldObj.cc_Credit_Bureau_Risk_Rating__c ){
+                    caseObj.addError('cc_Credit_Bureau_Risk_Rating__c','Please select Zero Score option on Credit Bureau Risk Rating field');
+                }
+                //CH65: END
+            }
+            //CH21: END
+            //CH26: Start
+            //CH50: Added Follow up condition in if block
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && caseOldObj.Sub_Status__c != caseObj.Sub_Status__c &&
+               (caseObj.Sub_Status__c == 'Pending' || caseObj.Sub_Status__c == 'Discrepancies' || caseObj.Sub_Status__c == 'Follow Up') && caseObj.Region_Flag__c == 'Bahrain'){
+                   System.debug('Checking Sub Status values from Other State ------> Pending');
+                   caseObj.cc_Last_Sub_Status_Changed_Pending__c = 'Not Changed';
+                   caseObj.LastCaseSubStatusChanged__c = System.now();
+               }
+            //CH50: Added Follow up condition in if block
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && caseOldObj.Sub_Status__c != caseObj.Sub_Status__c &&
+               (caseObj.Sub_Status__c != 'Pending' && caseObj.Sub_Status__c != 'Discrepancies' && caseObj.Sub_Status__c != 'Follow Up')  && caseObj.Region_Flag__c == 'Bahrain'){
+                   System.debug('Checking Sub Status values from Pending ------> Other State');
+                   caseObj.cc_Last_Sub_Status_Changed_Pending__c = 'Changed';
+                   caseObj.LastCaseSubStatusChanged__c = System.now();
+               }
+            //CH26: END
+            //CH66: Start
+            if(caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase' && caseOldObj.Sub_Status__c != caseObj.Sub_Status__c &&
+               (caseObj.Sub_Status__c == 'Pending' || caseObj.Sub_Status__c == 'Discrepancies') && caseObj.Region_Flag__c == 'Bahrain'){
+                   System.debug('Checking Sub Status values from Other State in limit increase ------> Pending');
+                   caseObj.cc_Last_Sub_Status_Changed_Pending__c = 'Not Changed';
+                   caseObj.LastCaseSubStatusChanged__c = System.now();
+               }
+            if(caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase' && caseOldObj.Sub_Status__c != caseObj.Sub_Status__c &&
+               (caseObj.Sub_Status__c != 'Pending' && caseObj.Sub_Status__c != 'Discrepancies') && caseObj.Region_Flag__c == 'Bahrain'){
+                   System.debug('Checking Sub Status values from Pending/Discrepancies ------> Other State');
+                   caseObj.cc_Last_Sub_Status_Changed_Pending__c = 'Changed';
+                   caseObj.LastCaseSubStatusChanged__c = System.now();
+               }
+            //CH66: END
+            //CH15: Start
+            //CH26:Start Commented by Jahangeer Mohammed #13-03-2022# related to Credit Card Application
+            //CH28 : Added IsCashCollateral field in if condition
+            //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
+            //CH55: Added Region Flag in if condition
+            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain') && caseObj.cc_Application_Stages__c == 'New' && caseObj.Awaiting_Customer_Feedback__c != caseOldObj.Awaiting_Customer_Feedback__c && caseObj.Awaiting_Customer_Feedback__c == true)
+            {
+            }
+            //CH26:Start Commented by Jahangeer Mohammed #13-03-2022# related to Credit Card Application
+            //CH28 : Added IsCashCollateral field in if condition
+            //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
+            //CH55: Added Region Flag in if condition
+            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain') && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c && (caseObj.cc_Signature_Verifier_Result__c == 'Re-Send' || caseObj.cc_Signature_Verifier_Result__c == 'Refer to Service Center') && caseObj.Awaiting_Customer_Feedback__c == true)
+            {
+                caseObj.Customer_Responded_for_Pending_Signature__c = 'Customer Not Responded';
+                caseObj.cc_Date_Awaiting_For_Pending_Signature__c = System.now();
+            }
+            //CH15: END
+    }
+    public static void creditCardBeforeUpdateRouting(Case caseObj, Case caseOldObj, List<Queue_IDs__mdt> queueIds, Map<Id, String> caseToRegion){
+            //CH46: Start
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && ((caseOldObj.Campaign_Name__c != caseObj.Campaign_Name__c) || (caseOldObj.Campaign_Validity__c != caseObj.Campaign_Validity__c)) && caseObj.Region_Flag__c == 'Bahrain'){
+                if(caseOldObj.Campaign_Name__c != caseObj.Campaign_Name__c && caseObj.Campaign_Name__c != null){
+                    caseObj.Approved_Campaign_Name__c = caseObj.Campaign_Name__c;
+                }
+                if(caseOldObj.Campaign_Validity__c != caseObj.Campaign_Validity__c && caseObj.Campaign_Validity__c != null){
+                    caseObj.Approved_Campaign_Validity__c = caseObj.Campaign_Validity__c;
+                }
+            }
+            //CH46: END
+            //CH32 : Start
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && caseObj.cc_Friend_s_Contact_Number__c != caseOldObj.cc_Friend_s_Contact_Number__c &&
+               caseObj.cc_Friend_s_Contact_Number__c != null && caseObj.Region_Flag__c == 'Bahrain'){
+                   String appendCountryCodeWithFriendNumber = '';
+                   String friendNumber = caseObj.cc_Friend_s_Contact_Number__c;
+                   if(!friendNumber.startsWith('+') && !friendNumber.startsWith('00')){
+                       appendCountryCodeWithFriendNumber = '+973';
+                       System.debug('Final Friend Contact Number:'+appendCountryCodeWithFriendNumber + caseObj.cc_Friend_s_Contact_Number__c);
+                       caseObj.cc_Final_Friend_s_Contact_Number__c = appendCountryCodeWithFriendNumber + caseObj.cc_Friend_s_Contact_Number__c;
+                   }
+                   if(friendNumber.startsWith('+973')){
+                       caseObj.cc_Final_Friend_s_Contact_Number__c = friendNumber ;
+                   }
+                   if(friendNumber.startsWith('00')){
+                       String extractStartingTwoIndexValues = friendNumber.substring(0,2);
+                       String replaceString = '+';
+                       String replace00WithPlus = extractStartingTwoIndexValues.replace(extractStartingTwoIndexValues,replaceString);
+                       String extractAfterSecondIndex = friendNumber.substring(2,friendNumber.length());
+                       caseObj.cc_Final_Friend_s_Contact_Number__c  = replace00WithPlus + extractAfterSecondIndex;
+                   }
+               }
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && caseObj.cc_Friend_s_Contact_Number__c != caseOldObj.cc_Friend_s_Contact_Number__c &&
+               caseObj.cc_Friend_s_Contact_Number__c == null && caseObj.Region_Flag__c == 'Bahrain'){
+                   caseObj.cc_Final_Friend_s_Contact_Number__c = caseObj.cc_Friend_s_Contact_Number__c;
+               }
+            //CH32 : END
+            //CH11 : Start
+            //CH28 : Added IsCashCollateral field in if condition
+            //CH26 : Commented the condition for Credit Card Application by #Jahangeer Mohammed# #13-03-2022#
+            //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
+            //CH55: Added Region Flag in if condition
+            if(((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Credit Limit Increase')) && caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && caseObj.Sub_Status__c =='Documents Received' && caseObj.Region_Flag__c == 'Bahrain')
+            {
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_PRE_SCREENER_QUEUE);
+                caseObj.cc_CRM_Stage__c = 'IN PROGRESS';
+                //CH19 : Start
+                caseObj.cc_Application_Stages__c = 'Credit Pre-Screening';
+                caseObj.Awaiting_Customer_Feedback__c = false;
+                //CH19 : END
+            }
+            //CH55: Added Region Flag in if condition
+            if(caseObj.Type == 'Credit Card Application' && caseObj.Sub_Type__c == 'New Credit Card' && caseObj.Sub_Status__c != caseOldObj.Sub_Status__c && caseObj.Sub_Status__c =='Documents Received' && caseObj.Region_Flag__c == 'Bahrain'){
+                Util.setOwnerQueue(queueIds, caseToRegion, caseObj, CREDIT_CARD_PRE_SCREENER_QUEUE);
+                caseObj.cc_CRM_Stage__c = 'IN PROGRESS';
+                caseObj.cc_Application_Stages__c = 'Credit Pre-Screening';
+                caseObj.Awaiting_Customer_Feedback__c = false;
+            }
+            //CH11 : END
     }
 }
