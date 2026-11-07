@@ -100,6 +100,7 @@
 #CH94# #Jahangeer Mohammed# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah, Customer Profile Update) from CreditCardHandler back into reStartManualOnboarding (logic unchanged).
 #CH95# #Jahangeer Mohammed# 02-11-2026# Moved the Credit Card logic of setContact (CH25/CH26/CH55/CH66/CH84) to CreditCardHandler.creditCardApplicationInsert (logic unchanged).
 #CH96# #Jahangeer Mohammed# 07-11-2026# Moved the Credit Card logic of before_UpdateDML (CH21/CH33/CH50/CH52/CH65/CH26/CH66/CH15 and CH46/CH32/CH11) to CreditCardHandler.creditCardBeforeUpdate and creditCardBeforeUpdateRouting, called from the same place in the loop (logic unchanged).
+#CH97# #Jahangeer Mohammed# 07-11-2026# Moved the Credit Card customer response logic of before_UpdateDML (CH15/CH26/CH83/CH17 and CH83 Email Sent/Received) to CreditCardHandler.creditCardEmailReceivedResponse and creditCardEmailStatusResponse, called from the same place (logic unchanged).
 */
 public without sharing class CaseHandler extends BaseTriggerHandler {
     private static final String  CONTACT_CENTRE_QUEUE = 'Contact Centre';
@@ -594,36 +595,7 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
             if(caseObj.Email_Status__c != caseOldObj.Email_Status__c && caseObj.Email_Status__c == 'Email Received' && caseObj.Awaiting_Customer_Feedback__c == true)
             {
                 caseObj.Awaiting_Customer_Feedback__c = false;
-                //CH15: Start
-                //CH26:Start Commented by Jahangeer Mohammed #10-03-2022# related to Credit Card Application
-                //CH28 : Added IsCashCollateral field in if condition
-                //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
-                //CH55: Added Region Flag in if condition
-                //CH83: Start Added the condition Credit Card Application,Cash Collateral Credit Limit Increase Application,Credit Card Cash Collateral Application in the below condition
-                if(caseObj.Sub_Status__c == 'Pending' && ((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' || caseObj.Type == 'Credit Card Cash Collateral Application') && caseObj.Region_Flag__c == 'Bahrain' )){
-                    caseObj.cc_Customer_Response__c = 'Customer Responded';
-                }
-                //CH83: END
-                //CH28 : Added IsCashCollateral field in if condition
-                //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
-                //CH55: Added Region Flag in if condition
-                if(caseObj.Sub_Status__c == 'Discrepancies' && (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain' )){
-                    caseObj.cc_Customer_Response_For_Discrepancy__c = 'Customer Responded';
-                }
-                //CH28 : Added IsCashCollateral field in if condition
-                //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application and added Type = 'Cash Collateral Credit Limit Increase Application' in If condition
-                //CH55: Added Region Flag in if condition
-                if((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain' ) && caseObj.Sub_Status__c == 'Pending Signature Verification'){
-                    caseObj.Customer_Responded_for_Pending_Signature__c = 'Customer Responded';
-                }
-                //CH26: END
-                //CH15: END
-                //CH17: Start
-                //CH55: Added Region Flag in if condition
-                if(caseObj.Sub_Status__c == 'Pending' && caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Region_Flag__c == 'Bahrain'){
-                    caseObj.cc_Customer_Response__c = 'Customer Responded';
-                }
-                //CH17: END
+                CreditCardHandler.creditCardEmailReceivedResponse(caseObj); //CH97
                 //CH41: Start
                 if(caseObj.Type == 'Credit Card Prepaid Application'){
                     caseObj.Sub_Status__c = 'In-Progress';
@@ -641,20 +613,7 @@ public without sharing class CaseHandler extends BaseTriggerHandler {
                 }
                 //CH70: END
             }
-            //CH83: Start
-            if(caseObj.Email_Status__c != caseOldObj.Email_Status__c && caseObj.Email_Status__c == 'Email Sent' && caseObj.Region_Flag__c == 'Bahrain'){
-                if(caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' || caseObj.Type == 'Credit Card Cash Collateral Application'){
-                    caseObj.cc_Customer_Response__c = 'Email sent to Customer';
-                    System.debug('Email Sent to the Customer');
-                }
-            }
-            if(caseObj.Email_Status__c != caseOldObj.Email_Status__c && caseObj.Email_Status__c == 'Email Received' && caseObj.Region_Flag__c == 'Bahrain'){
-                if(caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' || caseObj.Type == 'Credit Card Cash Collateral Application'){
-                    caseObj.cc_Customer_Response__c = 'Customer Responded';
-                    System.debug('Email Received from the Customer');
-                }
-            }
-            //CH83: END
+            CreditCardHandler.creditCardEmailStatusResponse(caseObj, caseOldObj); //CH97
             //CH27: start Swapna
             if(caseObj.RecordTypeId==system.Label.Premium_Retention_RecordType && caseObj.Status!='Closed' )
             {

@@ -1377,4 +1377,52 @@ public without sharing class CreditCardHandler {
             }
             //CH11 : END
     }
+    public static void creditCardEmailReceivedResponse(Case caseObj){
+                //CH15: Start
+                //CH26:Start Commented by Jahangeer Mohammed #10-03-2022# related to Credit Card Application
+                //CH28 : Added IsCashCollateral field in if condition
+                //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
+                //CH55: Added Region Flag in if condition
+                //CH83: Start Added the condition Credit Card Application,Cash Collateral Credit Limit Increase Application,Credit Card Cash Collateral Application in the below condition
+                if(caseObj.Sub_Status__c == 'Pending' && ((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' || caseObj.Type == 'Credit Card Cash Collateral Application') && caseObj.Region_Flag__c == 'Bahrain' )){
+                    caseObj.cc_Customer_Response__c = 'Customer Responded';
+                }
+                //CH83: END
+                //CH28 : Added IsCashCollateral field in if condition
+                //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
+                //CH55: Added Region Flag in if condition
+                if(caseObj.Sub_Status__c == 'Discrepancies' && (caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain' )){
+                    caseObj.cc_Customer_Response_For_Discrepancy__c = 'Customer Responded';
+                }
+                //CH28 : Added IsCashCollateral field in if condition
+                //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application and added Type = 'Cash Collateral Credit Limit Increase Application' in If condition
+                //CH55: Added Region Flag in if condition
+                if((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain' ) && caseObj.Sub_Status__c == 'Pending Signature Verification'){
+                    caseObj.Customer_Responded_for_Pending_Signature__c = 'Customer Responded';
+                }
+                //CH26: END
+                //CH15: END
+                //CH17: Start
+                //CH55: Added Region Flag in if condition
+                if(caseObj.Sub_Status__c == 'Pending' && caseObj.Type == 'Credit Card Supplementary Application' && caseObj.Region_Flag__c == 'Bahrain'){
+                    caseObj.cc_Customer_Response__c = 'Customer Responded';
+                }
+                //CH17: END
+    }
+    public static void creditCardEmailStatusResponse(Case caseObj, Case caseOldObj){
+            //CH83: Start
+            if(caseObj.Email_Status__c != caseOldObj.Email_Status__c && caseObj.Email_Status__c == 'Email Sent' && caseObj.Region_Flag__c == 'Bahrain'){
+                if(caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' || caseObj.Type == 'Credit Card Cash Collateral Application'){
+                    caseObj.cc_Customer_Response__c = 'Email sent to Customer';
+                    System.debug('Email Sent to the Customer');
+                }
+            }
+            if(caseObj.Email_Status__c != caseOldObj.Email_Status__c && caseObj.Email_Status__c == 'Email Received' && caseObj.Region_Flag__c == 'Bahrain'){
+                if(caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application' || caseObj.Type == 'Credit Card Cash Collateral Application'){
+                    caseObj.cc_Customer_Response__c = 'Customer Responded';
+                    System.debug('Email Received from the Customer');
+                }
+            }
+            //CH83: END
+    }
 }
