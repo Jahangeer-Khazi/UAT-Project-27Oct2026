@@ -383,6 +383,12 @@ public without sharing class SM05_CreditCardApiHandler {
                updatedStatus.equalsIgnoreCase('APPROVED')
               ){
                   requestObject.put('creditLimit',String.valueOf(approvedCreditLimit));
+                  //CH06: Start
+                    if(objcase.Resend_DocuSign__c == 'Digital Signature'){
+                        requestObject.put('signingType','DigitalSignature');
+                        requestObject.put('signingStatus','');
+                    }
+                    //CH06: END
                   //CH05: Start
                   if(objcase.Type == 'Credit Card Application' && objcase.Is_Balance_Transfer__c == true){
                       Integer balanceTransferRate = convertRate(objcase.Balance_Transfer_Rate__c);
@@ -400,10 +406,10 @@ public without sharing class SM05_CreditCardApiHandler {
                     ){
                         //CH05: Start
                         if(objcase.Is_Balance_Transfer__c == false){
-                           requestObject.put('balanceTransferAmount', String.valueOf(approvedBalanceTransferAmount) ); 
+                           requestObject.put('balanceTransferAmount', String.valueOf(approvedBalanceTransferAmount) );
                         }
                         //requestObject.put('balanceTransferAmount', String.valueOf(approvedBalanceTransferAmount) );
-                        //CH05: END
+                    //CH05: END
                     }
                   
               }
@@ -637,9 +643,10 @@ public without sharing class SM05_CreditCardApiHandler {
     public static CC_Application_Status_Mapping__mdt getApiStatusBasedOnCaseChanges( Case caseObj, String changedField ){
         
         //CH05: Start: Added a field Is_Balance_Transfer__c on SOQL
+        //CH06: Start: Added a field isDigitalSignature__c on SOQL
         List<CC_Application_Status_Mapping__mdt> mappingMetadataList = [SELECT id,Label, fieldAPiName__c, Value__c, apiStatus__c,Awaiting_Customer_Feedback__c,Sub_Status__c,
                                                                         queueDeveloperName__c,isApiCall__c,crmStage__c,emailAlertName__c,cc_Application_Stages__c,regionName__c,Status__c,
-                                                                        Type__c, criteria__c,MasterLabel,isDocuSign__c,sectionResultFields__c, fieldsToBeReseted__c,Is_Balance_Transfer__c
+                                                                        Type__c, criteria__c,MasterLabel,isDocuSign__c,sectionResultFields__c, fieldsToBeReseted__c,Is_Balance_Transfer__c,isDigitalSignature__c
                                                                         FROM CC_Application_Status_Mapping__mdt 
                                                                         WHERE Type__c = :caseObj.Type AND regionName__c = :caseObj.Region_Flag__c AND fieldAPiName__c = :changedField 
                                                                         AND Value__c = :(String)caseObj.get(changedField) AND RecordType_DeveloperName__c =:caseObj.RecordType_DeveloperName__c];
@@ -649,7 +656,7 @@ public without sharing class SM05_CreditCardApiHandler {
         for(CC_Application_Status_Mapping__mdt metadataRec : mappingMetadataList) {
             //CH05: Start
             if(metadataRec.criteria__c == null){
-                // Special handling ONLY for Card Operation Result = Accept
+                // Special handling ONLY for Card Operation Result = Accept (JO BALANCE TRANSFER PROCESS)
                 if(caseObj.Type == 'Credit Card Application' && changedField == 'cc_Card_Operations_Result__c' && metadataRec.Value__c == 'Accept'){
                     if(metadataRec.Is_Balance_Transfer__c == caseObj.Is_Balance_Transfer__c){
                         System.debug('Matched Based on Balance Transfer in Card Operation Result');
@@ -657,7 +664,7 @@ public without sharing class SM05_CreditCardApiHandler {
                      }
                      continue;
                 }
-                // Special handling ONLY for Operation Result = Accept Final Stage
+                // Special handling ONLY for Operation Result = Accept Final Stage (JO BALANCE TRANSFER PROCESS)
                 if(caseObj.Type == 'Credit Card Application' && changedField == 'cc_Operations_Result__c' && metadataRec.Value__c == 'Balance Transfer Processed'){
                     if(metadataRec.Is_Balance_Transfer__c == caseObj.Is_Balance_Transfer__c){
                         System.debug('Matched Based on Balance Transfer in BT Operation Result');
@@ -665,6 +672,23 @@ public without sharing class SM05_CreditCardApiHandler {
                      }
                      continue;
                 }
+                //CH06: Start
+                // Special handling ONLY for Credit Approval Result = Accept (JO DIGITAL SIGNATURE PROCESS)
+                if(caseObj.Type == 'Credit Card Application' && changedField == 'cc_Credit_Approval_Result__c' && metadataRec.Value__c == 'Approve'){
+                    if(metadataRec.isDigitalSignature__c == true && caseObj.Resend_DocuSign__c == 'Digital Signature'){
+                        System.debug('Matched Based on Digital Signature');
+                        return metadataRec;
+                    }else if(metadataRec.isDocuSign__c == true && caseObj.Resend_DocuSign__c == 'Docusign'){
+                        System.debug('Matched Based on DocuSign');
+                        return metadataRec;
+                    }
+                    // Signing type not determined: fall back to DocuSign (previous behaviour)
+                    else if(defaultMetadataRec == null){
+                        defaultMetadataRec = metadataRec;
+                    }
+                    continue;
+                }
+                //CH06: END
                 // Normal scenarios (only one metadata expected)
                 if(defaultMetadataRec == null){
                     defaultMetadataRec = metadataRec;

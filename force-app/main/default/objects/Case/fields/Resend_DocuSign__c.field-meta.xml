@@ -37,12 +37,10 @@
         </valueSetDefinition>
         <valueSettings>
             <controllingFieldValue>Bahrain</controllingFieldValue>
-            <controllingFieldValue>Jordan</controllingFieldValue>
             <valueName>In-App</valueName>
         </valueSettings>
         <valueSettings>
             <controllingFieldValue>Bahrain</controllingFieldValue>
-            <controllingFieldValue>Jordan</controllingFieldValue>
             <valueName>Email</valueName>
         </valueSettings>
         <valueSettings>
