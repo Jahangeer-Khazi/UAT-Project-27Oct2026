@@ -19,6 +19,9 @@ public without sharing class SM05_CreditCardApiHandler {
     private static List<System_Action__c> lstSA = new List<System_Action__c>();
     private static List<CaseComment> lstComment = new List<CaseComment>();
     public static Integer updateCreditCardRequestStatusApi_StatusCode = 200;
+    //CH06: Start
+    @TestVisible private static String currentChangedField; 
+    //CH06: END
     public static Integer getCardProductConfiId_IncludeOtherProductsEqualTrue_StatusCode = 200;
     public static boolean throwException_1 = false;
     public static boolean throwException_2 = false;
@@ -190,6 +193,9 @@ public without sharing class SM05_CreditCardApiHandler {
                         if(apiStatusMappingRecord != null && apiStatusMappingRecord.isApiCall__c == true ){
                             System.debug('debug inside response');
                             if( !test.isRunningTest() ){
+                                //CH06: Start
+                                currentChangedField = changedField; 
+                                //CH06: END
                                 response = updateCreditCardRequestStatusApi(request,caseObj,apiStatusMappingRecord.apiStatus__c,isNew);
                             }
                             system.debug('---> Response New --> '+response.getBody());
@@ -386,7 +392,12 @@ public without sharing class SM05_CreditCardApiHandler {
                   //CH06: Start
                     if(objcase.Resend_DocuSign__c == 'Digital Signature'){
                         requestObject.put('signingType','DigitalSignature');
-                        requestObject.put('signingStatus','');
+                        // Signature Verifier Re-Send restarts the Digital Signature
+                        if(currentChangedField == 'cc_Signature_Verifier_Result__c' && objcase.cc_Signature_Verifier_Result__c == 'Re-Send'){
+                            requestObject.put('signingStatus','started');
+                        }else{
+                            requestObject.put('signingStatus','');
+                        }
                     }
                     //CH06: END
                   //CH05: Start
@@ -673,8 +684,10 @@ public without sharing class SM05_CreditCardApiHandler {
                      continue;
                 }
                 //CH06: Start
-                // Special handling ONLY for Credit Approval Result = Accept (JO DIGITAL SIGNATURE PROCESS)
-                if(caseObj.Type == 'Credit Card Application' && changedField == 'cc_Credit_Approval_Result__c' && metadataRec.Value__c == 'Approve'){
+                // Special handling ONLY for Credit Approval Result = Accept and Signature Verifier Result = Re-Send (JO DIGITAL SIGNATURE PROCESS)
+                if(caseObj.Type == 'Credit Card Application' &&
+                   ((changedField == 'cc_Credit_Approval_Result__c' && metadataRec.Value__c == 'Approve') ||
+                    (changedField == 'cc_Signature_Verifier_Result__c' && metadataRec.Value__c == 'Re-Send'))){
                     if(metadataRec.isDigitalSignature__c == true && caseObj.Resend_DocuSign__c == 'Digital Signature'){
                         System.debug('Matched Based on Digital Signature');
                         return metadataRec;
