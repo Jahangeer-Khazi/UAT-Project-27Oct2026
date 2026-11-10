@@ -684,10 +684,11 @@ public without sharing class SM05_CreditCardApiHandler {
                      continue;
                 }
                 //CH06: Start
-                // Special handling ONLY for Credit Approval Result = Accept and Signature Verifier Result = Re-Send (JO DIGITAL SIGNATURE PROCESS)
+                // Special handling ONLY for Credit Approval Result = Accept, Signature Verifier Result = Re-Send and HR Result = Approved (JO DIGITAL SIGNATURE PROCESS)
                 if(caseObj.Type == 'Credit Card Application' &&
                    ((changedField == 'cc_Credit_Approval_Result__c' && metadataRec.Value__c == 'Approve') ||
-                    (changedField == 'cc_Signature_Verifier_Result__c' && metadataRec.Value__c == 'Re-Send'))){
+                    (changedField == 'cc_Signature_Verifier_Result__c' && metadataRec.Value__c == 'Re-Send') ||
+                    (changedField == 'cc_HR_Result__c' && metadataRec.Value__c == 'Approved'))){
                     if(metadataRec.isDigitalSignature__c == true && caseObj.Resend_DocuSign__c == 'Digital Signature'){
                         System.debug('Matched Based on Digital Signature');
                         return metadataRec;
