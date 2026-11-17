@@ -17,6 +17,7 @@
            #CH13# #Jahangeer Mohammed# #23-02-2025# Added Logic to add STP Decisoning(NBA-13287)
 		   #CH14# #Jahangeer Mohammed# #10-12-2025# Added Logic to add STP Decisoning for GCC(NBA-15138)
            #CH15# #Aniss Mbarki# 22-12-2025# Added Logic for Credit Card - In-App DocuSign Documents Signing  (NBA-13727)
+           #CH16# #Jahangeer Mohammed #17-11-2026# Added Logic for Jordan Credit Card Digital Signature (NBA-16140)
 */
 public class CashCollateralHandler {
     
@@ -26,6 +27,11 @@ public class CashCollateralHandler {
         Set<Id> setCashCollateralCaseReferToServiceCenterByPrescreener = new Set<Id>();
         Set<Id> setCashCollateralCaseReturnToPrescreenerByServiceCenter = new Set<Id>();
         Set<Id> setCashCollateralCaseApprovedByApprover = new Set<Id>();
+        //CH16: Start
+        Set<Id> setCashCollateralCaseApprovedByApproverForDS = new Set<Id>();
+        Set<Id> setCashCollateralCaseUseDocuSignBySignatureVerifierJO = new Set<Id>();
+        Set<Id> setCashCollateralCaseUseDigitalSignBySignatureVerifierJO = new Set<Id>();
+        //CH16: END
         Set<Id> setCashCollateralCaseApprovedByApproverInApp = new Set<Id>();//#CH15
         Set<Id> setCashCollateralCaseReferToServiceCenterByApprover = new Set<Id>();
         Set<Id> setCashCollateralCaseReturnToApproverByServiceCenter = new Set<Id>();
@@ -138,10 +144,18 @@ public class CashCollateralHandler {
                         System.debug('Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral In-App scenario');
                         setCashCollateralCaseApprovedByApproverInApp.add(caseObj.id);
                     }
-                }else{
-                    System.debug('Jordan -- Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral');
-                    setCashCollateralCaseApprovedByApprover.add(caseObj.id);
+                }else if(caseObj.Region_Flag__c == 'Jordan'){ //CH16: Start
+                    if(caseObj.Resend_DocuSign__c == 'DocuSign'){
+                        System.debug('Jordan -- Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral');
+                        setCashCollateralCaseApprovedByApprover.add(caseObj.id);
+                    }
+                    else if(caseObj.Resend_DocuSign__c == 'Digital Signature'){
+                        System.debug('Jordan -- Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral Digital Signature');
+                        setCashCollateralCaseApprovedByApproverForDS.add(caseObj.id);
+                    }
+                    
                 }
+                //CH16: END
                 //#CH15 : End
             }
             //CH07: END
@@ -264,7 +278,21 @@ public class CashCollateralHandler {
                }
             //CH07: END
             /************************************************************* END : Signature Verifier Stage - Cash Collateral Application Process ila Blue for Jordan ****************************************************************************************/
-
+            
+            //CH16: Start
+            if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral') ) &&
+               caseObj.cc_Signature_Verifier_Result__c == 'Use DocuSign' &&  caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
+               caseObj.cc_Application_Stages__c == 'Credit Signature Verification' && (caseObj.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01') && caseObj.Region_Flag__c == 'Jordan'){
+                   System.debug('Set Cases for Credit Signature for ila blue/black for Cash Collateral Jordan'); 
+                   setCashCollateralCaseUseDocuSignBySignatureVerifierJO.add(caseObj.id);
+            }
+            if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral') ) &&
+               caseObj.cc_Signature_Verifier_Result__c == 'Use Digital Signature' &&  caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
+               caseObj.cc_Application_Stages__c == 'Credit Signature Verification' && (caseObj.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01') && caseObj.Region_Flag__c == 'Jordan'){
+                   System.debug('Set Cases for Credit Signature for ila blue/black for Cash Collateral Jordan'); 
+                   setCashCollateralCaseUseDigitalSignBySignatureVerifierJO.add(caseObj.id);
+            }
+            //CH16: END
             /************************************************************* Start : Signature Verifier Stage - Cash Collateral Application Process ila Switch for Bahrain ****************************************************************************************/
             //CH07: Added Region Flag in if condition
             //CH12: Added Is_Balance_Transfer__c in if condition for Cobranded Cards
@@ -663,6 +691,18 @@ public class CashCollateralHandler {
          if(!setCashCollateralCaseAcceptByJordanSignatureVerifierForNonBalanceTransfer.isEmpty()){
             CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralCaseAcceptByJordanSignatureVerifierForNonBalanceTransfer);
         }
+        //CH16: Start
+        if(!setCashCollateralCaseUseDocuSignBySignatureVerifierJO.isEmpty()){
+            CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralCaseUseDocuSignBySignatureVerifierJO);
+            if(!test.isRunningTest()){
+                DocuSignApexToolKit autoSendDocSign =  new DocuSignApexToolKit(setCashCollateralCaseUseDocuSignBySignatureVerifierJO);
+                System.enqueueJob(autoSendDocSign);
+            }
+        }
+        if(!setCashCollateralCaseUseDigitalSignBySignatureVerifierJO.isEmpty()){
+            CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralCaseUseDigitalSignBySignatureVerifierJO);
+        }
+        //CH16: END
         if(!setCashCollateralCaseReturnToCardAdminByServiceCenter.isEmpty()){
             CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralCaseReturnToCardAdminByServiceCenter);
         }
@@ -713,6 +753,11 @@ public class CashCollateralHandler {
                 System.enqueueJob(autoSendDocSign);
             }
         }
+        //CH16: Start
+        if(!setCashCollateralCaseApprovedByApproverForDS.isEmpty()){
+            CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralCaseApprovedByApproverForDS);
+        }
+        //CH16: END
         //#CH15 : Start
         if(!setCashCollateralCaseApprovedByApproverInApp.isEmpty()){
             System.debug('Credit Card Approver for InApp Scenario-----> '+setCashCollateralCaseApprovedByApproverInApp);
@@ -933,6 +978,20 @@ public class CashCollateralHandler {
                    //CH03: Start
                     //accIdset.add(cs.AccountId);
                   //CH03: END
+                  //CH16: Start
+                  if((cs.Type == 'Credit Card Cash Collateral Application' || cs.Type == 'Cash Collateral Credit Limit Increase Application') && cs.Region_Flag__c == 'Jordan'){
+                    if(String.isNotBlank(cs.Customer_Segment__c)){
+                        List<CC_Signing_Method_Mapping__mdt> signingMappings = [SELECT Signing_Type__c
+                                                                                 FROM CC_Signing_Method_Mapping__mdt
+                                                                                 WHERE Region_Flag__c = :cs.Region_Flag__c
+                                                                                 AND Segment__c = :cs.Customer_Segment__c
+                                                                                 LIMIT 1];
+                        if(!signingMappings.isEmpty() && String.isNotBlank(signingMappings[0].Signing_Type__c)){
+                            cs.Resend_DocuSign__c = signingMappings[0].Signing_Type__c;
+                        }
+                    }
+                  }
+                  //CH16: END
                 
             }
             //CH07: END
