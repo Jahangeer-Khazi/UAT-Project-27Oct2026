@@ -685,7 +685,8 @@ public without sharing class SM05_CreditCardApiHandler {
                 }
                 //CH06: Start
                 // Special handling ONLY for Credit Approval Result = Accept, Signature Verifier Result = Re-Send and HR Result = Approved (JO DIGITAL SIGNATURE PROCESS)
-                if(caseObj.Type == 'Credit Card Application' &&
+                // Applies to Credit Card Application and Credit Limit Increase Application
+                if((caseObj.Type == 'Credit Card Application' || caseObj.Type == 'Credit Limit Increase Application') &&
                    ((changedField == 'cc_Credit_Approval_Result__c' && metadataRec.Value__c == 'Approve') ||
                     (changedField == 'cc_Signature_Verifier_Result__c' && metadataRec.Value__c == 'Re-Send') ||
                     (changedField == 'cc_HR_Result__c' && metadataRec.Value__c == 'Approved'))){
