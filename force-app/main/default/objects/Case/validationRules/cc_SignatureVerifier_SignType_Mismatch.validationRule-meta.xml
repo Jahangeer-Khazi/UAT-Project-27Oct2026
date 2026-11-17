@@ -2,10 +2,13 @@
 <ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>cc_SignatureVerifier_SignType_Mismatch</fullName>
     <active>true</active>
-    <description>Jordan Credit Card Digital Signature (NBA-16140): Signature Verifier Result must match the Sign Type. Use DocuSign is allowed only when Sign Type is Docusign, and Use Digital Signature only when Sign Type is Digital Signature.</description>
+    <description>Jordan Credit Card Digital Signature (NBA-16140): For Credit Card Application and Credit Limit Increase Application, Signature Verifier Result must match the Sign Type. Use DocuSign is allowed only when Sign Type is Docusign, and Use Digital Signature only when Sign Type is Digital Signature.</description>
     <errorConditionFormula>AND(
 ($User.LastName &lt;&gt; &quot;Integration&quot;),
+OR(
 ISPICKVAL(Type, &quot;Credit Card Application&quot;),
+ISPICKVAL(Type, &quot;Credit Limit Increase Application&quot;)
+),
 ISPICKVAL(Region_Flag__c, &quot;Jordan&quot;),
 ISCHANGED(cc_Signature_Verifier_Result__c),
 OR(
