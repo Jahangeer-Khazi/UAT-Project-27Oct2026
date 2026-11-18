@@ -43,7 +43,7 @@
     <actionCalls>
         <name>Case_Owner_Change_Notification0</name>
         <label>Case Owner Change Notification</label>
-        <locationX>5792</locationX>
+        <locationX>6056</locationX>
         <locationY>1442</locationY>
         <actionName>Case.Email_notification_general</actionName>
         <actionType>emailAlert</actionType>
@@ -1231,6 +1231,29 @@
         </connector>
     </assignments>
     <assignments>
+        <name>Route_to_Signature_Verifier2</name>
+        <label>Route to Signature Verifier</label>
+        <locationX>11402</locationX>
+        <locationY>758</locationY>
+        <assignmentItems>
+            <assignToReference>newcaseRecord.OwnerId</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>$Label.Jordan_Credit_Signature_Verification_Queue</elementReference>
+            </value>
+        </assignmentItems>
+        <assignmentItems>
+            <assignToReference>newcaseRecord.Awaiting_Customer_Feedback__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <booleanValue>false</booleanValue>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Copy_1_of_Update_Owner</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
         <name>Service_Centre_Return_to_Approver</name>
         <label>Service Centre - Return to Approver</label>
         <locationX>9554</locationX>
@@ -1655,7 +1678,7 @@
     <decisions>
         <name>Assign_to_yourself_is_ticked</name>
         <label>Assign to yourself is ticked?</label>
-        <locationX>8861</locationX>
+        <locationX>9257</locationX>
         <locationY>134</locationY>
         <defaultConnector>
             <targetReference>Cash_Collateral_Segment_Check</targetReference>
@@ -1687,7 +1710,7 @@
     <decisions>
         <name>Cash_Collateral_Segment_Check</name>
         <label>Cash Collateral Segment Check</label>
-        <locationX>8861</locationX>
+        <locationX>9257</locationX>
         <locationY>434</locationY>
         <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
         <rules>
@@ -1768,6 +1791,28 @@
                 <targetReference>Credit_Card_Limit_Increase</targetReference>
             </connector>
             <label>Limit Increase - Regular Customer</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Digital_Status</name>
+        <label>Check Digital Status</label>
+        <locationX>11534</locationX>
+        <locationY>650</locationY>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Success</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>newcaseRecord.Digital_Signature_Status__c</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <stringValue>Success</stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Route_to_Signature_Verifier2</targetReference>
+            </connector>
+            <label>Success</label>
         </rules>
     </decisions>
     <decisions>
@@ -1872,7 +1917,7 @@
     <decisions>
         <name>isNewCaseRecord</name>
         <label>isNewCaseRecord</label>
-        <locationX>5792</locationX>
+        <locationX>6056</locationX>
         <locationY>542</locationY>
         <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
         <rules>
@@ -2173,6 +2218,28 @@
                 <targetReference>Making_Comments_Blank</targetReference>
             </connector>
             <label>Case Comment Clear</label>
+        </rules>
+        <rules>
+            <name>Digital_Signature_Status</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>newcaseRecord.Digital_Signature_Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <elementReference>oldcaseRecord.Digital_Signature_Status__c</elementReference>
+                </rightValue>
+            </conditions>
+            <conditions>
+                <leftValueReference>newcaseRecord.Digital_Signature_Status__c</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue>
+                    <stringValue></stringValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Check_Digital_Status</targetReference>
+            </connector>
+            <label>Digital Signature Status</label>
         </rules>
     </decisions>
     <decisions>
@@ -2817,7 +2884,7 @@
             <label>Use DocuSign</label>
         </rules>
     </decisions>
-    <description>Cloned from V10 to add Logic for Digital Signature</description>
+    <description>Cloned from V11 to add Logic for Digital Signature</description>
     <environments>Default</environments>
     <formulas>
         <name>currentDateTime</name>
@@ -2854,7 +2921,7 @@
     <recordUpdates>
         <name>Assign_to_current_user_and_uncheck_assignToself_flag</name>
         <label>Assign to current user and uncheck assignToself flag</label>
-        <locationX>8729</locationX>
+        <locationX>9125</locationX>
         <locationY>242</locationY>
         <connector>
             <targetReference>Cash_Collateral_Segment_Check</targetReference>
@@ -2922,13 +2989,17 @@
         <inputReference>newcaseRecord</inputReference>
     </recordUpdates>
     <recordUpdates>
+        <name>Copy_1_of_Update_Owner</name>
+        <label>Update Owner</label>
+        <locationX>11402</locationX>
+        <locationY>866</locationY>
+        <inputReference>newcaseRecord</inputReference>
+    </recordUpdates>
+    <recordUpdates>
         <name>Copy_2_of_Route_to_Same_Queue_Signature_Verifier</name>
         <label>Route to Same Queue Signature Verifier</label>
         <locationX>6914</locationX>
         <locationY>866</locationY>
-        <connector>
-            <targetReference>Case_Owner_Change_Notification0</targetReference>
-        </connector>
         <inputReference>newcaseRecord</inputReference>
     </recordUpdates>
     <recordUpdates>
@@ -3196,7 +3267,7 @@
         <inputReference>newcaseRecord</inputReference>
     </recordUpdates>
     <start>
-        <locationX>8735</locationX>
+        <locationX>9131</locationX>
         <locationY>0</locationY>
         <connector>
             <targetReference>Assign_to_yourself_is_ticked</targetReference>
@@ -3206,7 +3277,7 @@
     <subflows>
         <name>Credit_Card_Limit_Increase</name>
         <label>Credit Card Limit Increase</label>
-        <locationX>11666</locationX>
+        <locationX>12194</locationX>
         <locationY>542</locationY>
         <flowName>Jordan_CC_Cash_Collateral_Limit_Increase</flowName>
         <inputAssignments>
