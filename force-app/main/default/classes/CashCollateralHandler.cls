@@ -31,6 +31,7 @@ public class CashCollateralHandler {
         Set<Id> setCashCollateralCaseApprovedByApproverForDS = new Set<Id>();
         Set<Id> setCashCollateralCaseUseDocuSignBySignatureVerifierJO = new Set<Id>();
         Set<Id> setCashCollateralCaseUseDigitalSignBySignatureVerifierJO = new Set<Id>();
+        Set<Id> setCashCollateralCaseResendBySignatureVerifierDigiSign = new Set<Id>();
         //CH16: END
         Set<Id> setCashCollateralCaseApprovedByApproverInApp = new Set<Id>();//#CH15
         Set<Id> setCashCollateralCaseReferToServiceCenterByApprover = new Set<Id>();
@@ -311,8 +312,17 @@ public class CashCollateralHandler {
             if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral' && (caseObj.Region_Flag__c == 'Bahrain' || caseObj.Region_Flag__c == 'Jordan')) || (caseObj.Type == 'Cash Collateral Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Cash Collateral Credit Limit Increase' && caseObj.Region_Flag__c == 'Bahrain')) &&
                caseObj.cc_Signature_Verifier_Result__c == 'Re-Send' && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
                caseObj.cc_Application_Stages__c == 'Credit Signature Verification'){
-                   System.debug('Set Cases Remains in for Credit Signature verifier in cash collateral'); 
-                   setCashCollateralCaseResendBySignatureVerifier.add(caseObj.id);
+                //CH16: Start   
+                if(caseObj.Region_Flag__c == 'Bahrain' || (caseObj.Region_Flag__c == 'Jordan' && caseObj.Resend_DocuSign__c == 'Docusign')){
+                        System.debug('Set Cases Remains in for Credit Signature verifier in cash collateral'); 
+                        setCashCollateralCaseResendBySignatureVerifier.add(caseObj.id);
+                }
+                if(caseObj.Region_Flag__c == 'Jordan' && caseObj.Resend_DocuSign__c == 'Digital Signature'){
+                    System.debug('Set Cases Route to Jordan Temp Queue in cash collateral'); 
+                    setCashCollateralCaseResendBySignatureVerifierDigiSign.add(caseObj.id);
+                }
+                //CH16: END
+                   
                }
 
             //#CH15: Start
@@ -783,6 +793,11 @@ public class CashCollateralHandler {
                 System.enqueueJob(autoSendDocSign);
             }
         }
+        //CH16: Start
+        if(!setCashCollateralCaseResendBySignatureVerifierDigiSign.isEmpty()){
+            CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralCaseResendBySignatureVerifierDigiSign);
+        }
+        //CH16: END
 
         //#CH15 : Start
         if(!setCashCollateralCaseResendBySignatureVerifierInApp.isEmpty()){

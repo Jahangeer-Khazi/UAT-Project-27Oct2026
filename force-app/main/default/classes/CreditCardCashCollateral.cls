@@ -1637,6 +1637,12 @@ objCase.cc_HR_Result_Date_Time__c = system.now();
                             '","targetType": "CREDIT_CARD_ORDER","status":"APPROVED_PENDING_SIGNATURE"}';*/
                             bodyObject.put('targetType','CREDIT_CARD_ORDER');
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+                            //CH32: Start
+                            if(objCase.Resend_DocuSign__c == 'Digital Signature'){
+                                bodyObject.put('signingType','DigitalSignature');
+                                bodyObject.put('signingStatus','started');
+                            }
+                            //CH32: END
                         }
                         //CH08: END
                        	//CH09: Added Decline conditions from if block
