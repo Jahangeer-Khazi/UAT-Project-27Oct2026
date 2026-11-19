@@ -32,6 +32,8 @@ public class CashCollateralHandler {
         Set<Id> setCashCollateralCaseUseDocuSignBySignatureVerifierJO = new Set<Id>();
         Set<Id> setCashCollateralCaseUseDigitalSignBySignatureVerifierJO = new Set<Id>();
         Set<Id> setCashCollateralCaseResendBySignatureVerifierDigiSign = new Set<Id>();
+        Set<Id> setCashCollateralLimitCaseApprovedByApproverForDS = new Set<Id>();
+        Set<Id> setCashCollateralLimitIncreaseCaseResendBySignatureVerifierDS = new Set<Id>();
         //CH16: END
         Set<Id> setCashCollateralCaseApprovedByApproverInApp = new Set<Id>();//#CH15
         Set<Id> setCashCollateralCaseReferToServiceCenterByApprover = new Set<Id>();
@@ -151,7 +153,7 @@ public class CashCollateralHandler {
                         setCashCollateralCaseApprovedByApprover.add(caseObj.id);
                     }
                     else if(caseObj.Resend_DocuSign__c == 'Digital Signature'){
-                        System.debug('Jordan -- Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral Digital Signature');
+                        System.debug('Jordan -- Set Cases for Jordan Temp Queue From Credit Approver in Cash Collateral Digital Signature');
                         setCashCollateralCaseApprovedByApproverForDS.add(caseObj.id);
                     }
                     
@@ -178,10 +180,18 @@ public class CashCollateralHandler {
                         System.debug('Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral limit Increase');
                         setCashCollateralLimitIncreaseCaseApprovedByApproverInApp.add(caseObj.id);
                     }
-                }else{
-                    System.debug('Jordan -- Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral limit Increase');
-                    setCashCollateralLimitIncreaseCaseApprovedByApprover.add(caseObj.id);
+                }else if(caseObj.Region_Flag__c == 'Jordan'){ //CH16: Start
+                    if(caseObj.Resend_DocuSign__c == 'DocuSign'){
+                        System.debug('Jordan -- Set Cases for Signature Verification Queue From Credit Approver in Cash Collateral limit Increase');
+                        setCashCollateralLimitIncreaseCaseApprovedByApprover.add(caseObj.id);
+                    }
+                    else if(caseObj.Resend_DocuSign__c == 'Digital Signature'){
+                        System.debug('Jordan -- Set Cases for Jordan Temp Queue From Credit Approver in Cash Collateral limit Digital Signature');
+                        setCashCollateralLimitCaseApprovedByApproverForDS.add(caseObj.id);
+                    }
+                    
                 }
+                //CH16: END
                 //#CH15 : End
             }
             //CH07: Added Region Flag in if condition
@@ -236,9 +246,17 @@ public class CashCollateralHandler {
             if(((caseObj.Type == 'Cash Collateral Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Cash Collateral Credit Limit Increase')) &&
                caseObj.cc_Signature_Verifier_Result__c == 'Re-Send' && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
                caseObj.cc_Application_Stages__c == 'Credit Signature Verification' && (caseObj.Region_Flag__c == 'Bahrain' || caseObj.Region_Flag__c == 'Jordan')){
-                   System.debug('Set Cases Remains in for Credit Signature verifier in cash collateral limit Increase'); 
-                   setCashCollateralLimitIncreaseCaseResendBySignatureVerifier.add(caseObj.id);
+                //CH16: Start   
+                if((caseObj.Region_Flag__c == 'Jordan' && caseObj.Resend_DocuSign__c == 'DocuSign') || caseObj.Region_Flag__c == 'Bahrain'){
+                        System.debug('Set Cases Remains in for Credit Signature verifier in cash collateral limit Increase DocuSign'); 
+                        setCashCollateralLimitIncreaseCaseResendBySignatureVerifier.add(caseObj.id);
+                   }else if(caseObj.Resend_DocuSign__c == 'Digital Signature'){
+                        System.debug('Set Cases Remains in for Credit Signature verifier in cash collateral limit Increase DigiSign'); 
+                        setCashCollateralLimitIncreaseCaseResendBySignatureVerifierDS.add(caseObj.id);
+                   }
+                   
                }
+               //CH16: END
             /************************************************************ END :  Signature Verifier Stage - Cash Collateral Limit Increase Application **********************************************************/
             //CH05: END
             
@@ -281,16 +299,16 @@ public class CashCollateralHandler {
             /************************************************************* END : Signature Verifier Stage - Cash Collateral Application Process ila Blue for Jordan ****************************************************************************************/
             
             //CH16: Start
-            if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral') ) &&
+            if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral') || (caseObj.Type == 'Cash Collateral Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Cash Collateral Credit Limit Increase')) &&
                caseObj.cc_Signature_Verifier_Result__c == 'Use DocuSign' &&  caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
                caseObj.cc_Application_Stages__c == 'Credit Signature Verification' && (caseObj.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01') && caseObj.Region_Flag__c == 'Jordan'){
-                   System.debug('Set Cases for Credit Signature for ila blue/black for Cash Collateral Jordan'); 
+                   System.debug('Set Cases for Credit Signature for ila blue/black for Cash Collateral/Limit Increase Jordan Docusign'); 
                    setCashCollateralCaseUseDocuSignBySignatureVerifierJO.add(caseObj.id);
             }
-            if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral') ) &&
+            if(((caseObj.Type == 'Credit Card Cash Collateral Application' && caseObj.Sub_Type__c == 'New Cash Collateral')  || (caseObj.Type == 'Cash Collateral Credit Limit Increase Application' && caseObj.Sub_Type__c == 'Cash Collateral Credit Limit Increase') ) &&
                caseObj.cc_Signature_Verifier_Result__c == 'Use Digital Signature' &&  caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
                caseObj.cc_Application_Stages__c == 'Credit Signature Verification' && (caseObj.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01') && caseObj.Region_Flag__c == 'Jordan'){
-                   System.debug('Set Cases for Credit Signature for ila blue/black for Cash Collateral Jordan'); 
+                   System.debug('Set Cases for Credit Signature for ila blue/black for Cash Collateral/Limit Increase Jordan Digital Signature'); 
                    setCashCollateralCaseUseDigitalSignBySignatureVerifierJO.add(caseObj.id);
             }
             //CH16: END
@@ -645,6 +663,12 @@ public class CashCollateralHandler {
                 System.enqueueJob(autoSendDocSign);
             }
         }
+        //CH16: Start
+        if(!setCashCollateralLimitCaseApprovedByApproverForDS.isEmpty()){
+            System.debug('Testing for Future Call for Cash Collateral Limit Increase when Credit Approver accepts for DS');
+            CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralLimitCaseApprovedByApproverForDS);
+        }
+        //CH16: END
         //#CH15 : Start
         if(!setCashCollateralLimitIncreaseCaseApprovedByApproverInApp.isEmpty()){
             System.debug('Credit Card Approver for InApp Scenario Cash Collateral Limit Increase-----> '+setCashCollateralLimitIncreaseCaseApprovedByApproverInApp);
@@ -667,6 +691,12 @@ public class CashCollateralHandler {
             System.debug('Testing for Future Call for Cash Collateral Limit Increase when signature verifier re-send');
             CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralLimitIncreaseCaseResendBySignatureVerifier);
         }
+        //CH16: Start
+        if(!setCashCollateralLimitIncreaseCaseResendBySignatureVerifierDS.isEmpty()){
+            System.debug('Testing for Future Call for Cash Collateral Limit Increase when signature verifier re-send');
+            CreditCardCashCollateral.CashCollateralCaseUpdate(setCashCollateralLimitIncreaseCaseResendBySignatureVerifierDS);
+        }
+        //CH16: END
         //#CH15 : Start
         if(!setCashCollateralLimitIncreaseCaseResendBySignatureVerifierInApp.isEmpty()){
             System.debug('Testing for Future Call for Cash Collateral Limit Increase when signature verifier re-send In-App');
