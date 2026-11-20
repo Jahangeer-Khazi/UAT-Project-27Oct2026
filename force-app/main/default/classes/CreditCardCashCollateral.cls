@@ -33,6 +33,7 @@
                     #CH29# #Jahangeer Mohammed# 15-04-2026# Added Logic for Cash Collateral Current Credit Limit Increase(NBA-8386)
 *                   #CH30# #Aniss Mbarki# 05-04-2026# Added Logic for Credit Card - In-App DocuSign attah Documents Signing to an email
  					#CH31# #Jahangeer Mohammed# 23-07-2026# Commented cc_Activate_Reminders_for_Pending_Cases__c in the SOQL Query and it is not required for reminder notifications and related fields - Automatic Creation of Upgrade Cases from Limit Increase Application(NBA-17560)
+                    #CH32# #Jahangeer Mohammed #17-11-2026# Added Logic for Jordan Credit Card Digital Signature (NBA-16140)
 
 */
 
@@ -940,12 +941,21 @@ global class CreditCardCashCollateral {
                     objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                         
                         if(objCase.Type == 'Credit Card Cash Collateral Application' && objCase.Sub_Type__c == 'New Cash Collateral'){
-                            if(objCase.cc_Credit_Approval_Result__c == 'Approve'){
+                            if(objCase.cc_Credit_Approval_Result__c == 'Approve' && objCase.Resend_DocuSign__c == 'DocuSign'){ //CH32: Added Resend_DocuSign__c in if condition
                                 body = '{"crmCaseId": "'+objCase.Id +
                                     '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
                                     '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
                                     '","targetType": "CREDIT_CARD_ORDER","status":"APPROVED_PENDING_SIGNATURE"}';
                             }
+                            //CH32: Start - Added signingType and signingStatus for Digital Signature
+                            else if(objCase.cc_Credit_Approval_Result__c == 'Approve' && objCase.Resend_DocuSign__c == 'Digital Signature'){
+                                    body = '{"crmCaseId": "'+objCase.Id +
+                                    '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
+                                    '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
+                                    '","targetType": "CREDIT_CARD_ORDER","status":"APPROVED_PENDING_SIGNATURE"' +
+                                    ',"signingType":"DigitalSignature","signingStatus":""}';
+                            }
+                            //CH32: END
                         }
                         system.debug('---> BODY IN APPROVED PENDING SIGNATURE IN CASH COLLATERAL JORDAN --> '+body);               
                         request.setBody(body);
@@ -981,10 +991,20 @@ global class CreditCardCashCollateral {
                     objCase.cc_Credit_Business_Team_L2_Result__c != 'Decline' && objCase.cc_Credit_Business_Team_L3_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                         
                          if(objCase.Type == 'Cash Collateral Credit Limit Increase Application' && objCase.Sub_Type__c == 'Cash Collateral Credit Limit Increase'){
-                             body = '{"crmCaseId": "'+objCase.Id +
+                            if(objCase.Resend_DocuSign__c == 'DocuSign'){
+                                body = '{"crmCaseId": "'+objCase.Id +
                                 '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
                                 '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
                                 '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE","cardNature":"secured"}';
+
+                            } 
+                            else if(objCase.Resend_DocuSign__c == 'Digital Signature'){
+                                body = '{"crmCaseId": "'+objCase.Id +
+                                '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
+                                '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
+                                '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE","cardNature":"secured"' +
+                                ',"signingType":"DigitalSignature","signingStatus":""}';
+                            }
                         }
                         system.debug('---> BODY IN APPROVED PENDING SIGNATURE IN CASH COLLATERAL JORDAN --> '+body);               
                         request.setBody(body);
@@ -1627,6 +1647,12 @@ objCase.cc_HR_Result_Date_Time__c = system.now();
                             '","targetType": "CREDIT_CARD_ORDER","status":"APPROVED_PENDING_SIGNATURE"}';*/
                             bodyObject.put('targetType','CREDIT_CARD_ORDER');
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+                            //CH32: Start
+                            if(objCase.Resend_DocuSign__c == 'Digital Signature'){
+                                bodyObject.put('signingType','DigitalSignature');
+                                bodyObject.put('signingStatus','started');
+                            }
+                            //CH32: END
                         }
                         //CH08: END
                        	//CH09: Added Decline conditions from if block
@@ -1639,6 +1665,12 @@ objCase.cc_HR_Result_Date_Time__c = system.now();
                             bodyObject.put('targetType','LIMIT_INCREASE');
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                             bodyObject.put('cardNature','secured');
+                            //CH32: Start
+                            if(objCase.Resend_DocuSign__c == 'Digital Signature'){
+                                bodyObject.put('signingType','DigitalSignature');
+                                bodyObject.put('signingStatus','started');
+                            }
+                            //CH32: END
                         }
                         //CH09: END
                         system.debug('---> BODY IN RESEND Approved Pending Signature FOR SIGNATURE VERIFICATION CASH COLLATERAL --> '+body);
