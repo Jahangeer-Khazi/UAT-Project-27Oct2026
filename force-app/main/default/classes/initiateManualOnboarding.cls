@@ -114,7 +114,6 @@ global class initiateManualOnboarding
                 objCase.Status = 'In Progress';
                 objCase.Priority = 'High';
                 Util.setOwnerQueueFromAccount(queueIds, accountToRegion, objCase, acc, IT_QUEUE);
-                //objCase.OwnerId = system.label.IT_Queue;
                 objCase.Origin = 'OL';
                 objCase.ContactId = acc.PersonContactId;
                 objCase.Case_Model__c=caseModelValue;//CH13 
@@ -209,7 +208,6 @@ global class initiateManualOnboarding
                 objCase.Type = 'Technical';
                 objCase.Status = 'In Progress';
                 objCase.Priority = 'High';
-                //objCase.OwnerId = system.label.IT_Queue;
                 Util.setOwnerQueueFromCase(queueIds, caseToRegion, objCase, caseObj, IT_QUEUE);
                 objCase.Origin = 'OL';
                 objCase.ContactId = caseObj.Account.PersonContactId;
@@ -239,7 +237,6 @@ global class initiateManualOnboarding
             Http http = new Http();
             HttpRequest request = new HttpRequest();
             request = con.createRequest('POST', '/api/v1/onboarding/continue?', objCase.Region_Flag__c);
-            //request = createRequest('POST','/api/v1/onboarding/manual/start?');
             
             if(objCase.Origin == 'EKYC-UPLOAD'){
                 String body = '{"caseId": "'+objCase.Id +
@@ -326,7 +323,6 @@ global class initiateManualOnboarding
             String body = '';
             HttpRequest request = new HttpRequest();
             request = con.createRequest('POST', '/api/v1/onboarding/continue?', objCase.Region_Flag__c);
-            //request = createRequest('POST','/api/v1/onboarding/manual/start?');
             
             if(objCase.Origin == 'EKYC-UPLOAD')
             {
@@ -444,7 +440,7 @@ global class initiateManualOnboarding
         //CH35 : Added Issuing_card_for_a_spouse__c,Spouse_CIF__c  in SOQL Query
         //CH43 : Commented cc_Activate_Reminders_for_Pending_Cases__c  in SOQL Query
         List<Case> lstCase = [Select id, AccountId,Account.ID_Type__pc,Account.x_canary__pc,Account.ID_Number__pc,Account.ID_Expiry_Date__pc,Account.iGA_Passport_Number__pc,cc_Passport_Number__c,cc_CPR_Number__c,cc_CPR_Expiry_Date__c, status, Sub_Status__c, Type, Sub_Type__c, 
-                              cc_Requested_Card_Type__c, Customer_Segment__c,Customer_CIF__c, cc_Name_on_the_Card__c, Origin, Account.PersonEmail, Account.CIF__pc,cc_Credit_Card_PCI_Number__c,cc_CC_Application_Source__c,/*cc_Activate_Reminders_for_Pending_Cases__c,*/ 
+                              cc_Requested_Card_Type__c, Customer_Segment__c,Customer_CIF__c, cc_Name_on_the_Card__c, Origin, Account.PersonEmail, Account.CIF__pc,cc_Credit_Card_PCI_Number__c,cc_CC_Application_Source__c,
                               PrimaryCardProductConfigurationId__c, PrimaryCard__c, sc_Card_Holder_Mobile_No__c, sc_Card_Holder_Email_Address__c, sc_Relationship__c, Region_Flag__c,Case_Model__c,cc_Request_Type__c,cc_Temporary_Limit_Increase_Duration__c,
                               cc_Temporary_Limit_Increase_Expiry_Date__c,cc_Reminder_Triggered__c,Has_Co_Brand_Membership_Number__c,Is_Balance_Transfer__c,cc_Approved_Embossing_line_4__c,Issuing_card_for_a_spouse__c,Spouse_CIF__c,
                               Send_OTP_Notifications_To__c, Send_Transaction_Notifications_To__c from Case where id in: setCaseId];
@@ -459,14 +455,11 @@ global class initiateManualOnboarding
                 regionName += '_alburaq';  
             }
             //CH19: Start
-            //request = con.createRequest('GET', '/api/v1/credit-cards?', regionName ); 
             request = con.createRequest('GET', System.Label.CC_EndPointGetCreditCards, regionName ); 
             //CH19: END
             //CH14 -End:
-            //request = con.createRequest('GET', '/api/v1/credit-cards?', objCase.Region_Flag__c);
             System.debug('Person Email :'+objCase.Account.PersonEmail);
             System.debug('Customer ID :'+objCase.Account.CIF__pc);
-            //System.debug('Case ID :'+setCaseId);
             
             request.setHeader('userId', objCase.Account.PersonEmail);
             request.setHeader('customerId', objCase.Account.CIF__pc);
@@ -522,7 +515,6 @@ global class initiateManualOnboarding
             HttpRequest request1 = new HttpRequest();
             //CH14 : replace param "objCase.Region_Flag__c" with "regionName"
             //CH19: Start
-            //request1 = con.createRequest('PUT', '/api/v1/credit-cards/request?', regionName);
             request1 = con.createRequest('PUT', System.Label.CC_EndPointCreditCardRequest, regionName);
             if(objCase.Account.x_canary__pc != null){
                 request1.setHeader('x-canary', objCase.Account.x_canary__pc);//CH22
@@ -936,7 +928,6 @@ global class initiateManualOnboarding
         //CH43: END
         List<System_Action__c> lstSA = new List<System_Action__c>();
         List<Supplementary_Card__c> lstSuppCard = new List<Supplementary_Card__c>();
-        // String cardProductConfigurationIdString = '';
         Integer ApprovedCardProductConfigurationId;
         String cardDisplayNameString = '';
         //CH08: Start
@@ -984,7 +975,6 @@ global class initiateManualOnboarding
                 regionName += '_alburaq';   
             } 
             //CH19: Start
-            //request = con.createRequest('PUT', '/api/v1/credit-cards/request?', regionName); 
             request = con.createRequest('PUT', System.Label.CC_EndPointCreditCardRequest, regionName);
             if(objCase.Account.x_canary__pc != null){
                 request.setHeader('x-canary', objCase.Account.x_canary__pc); //CH22
@@ -993,7 +983,6 @@ global class initiateManualOnboarding
             system.debug(' New Test Payload --->' +request);
             //CH19: END
             //CH14 -End:
-            //  request = con.createRequest('PUT', '/api/v1/credit-cards/request?', objCase.Region_Flag__c);
             System.debug('Pre screening result value in Future Methods:'+objCase.cc_Credit_Pre_Screening_Result__c);
             System.debug('HR Approve Result:'+objCase.cc_HR_Result__c);
             //CH23: Added a condition Fraud Result != Decline and Fraud Result != Cancelled by Customer in if condition
@@ -1076,8 +1065,8 @@ global class initiateManualOnboarding
             //CH03 : Commented the Pre-screening Result Condition by Jahangeer Mohammed.
             //CH23: Added a condition Fraud Result != Decline and Fraud Result != Cancelled by Customer in if condition
             //CH25: Added a condition Signature Verifier Result != Decline and Signature Verifier Result != Cancelled by Customer in if condition
-            else if(((objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card') || (objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase')) && objCase.Sub_Status__c == 'In-Progress' && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' /*&& objCase.cc_Credit_Pre_Screening_Result__c != 'Accept'*/ && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && 
-                    objCase.cc_HR_Result__c != 'Approved' && objCase.cc_HR_Result__c != 'Decline' /*&& objCase.cc_Business_Approval_Result__c != 'Approve'*/ && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Rejected' && objCase.cc_Credit_Evaluation_Result__c != 'Decline' && objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && 
+            else if(((objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card') || (objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase')) && objCase.Sub_Status__c == 'In-Progress' && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' &&
+                    objCase.cc_HR_Result__c != 'Approved' && objCase.cc_HR_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Rejected' && objCase.cc_Credit_Evaluation_Result__c != 'Decline' && objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' &&
                     objCase.cc_Credit_Evaluation_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Verification_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Approval_Result__c  !='Cancelled by Customer' && objCase.cc_HR_Result__c !='Cancelled by Customer' && objCase.Fraud_Results__c != 'Decline' && objCase.Fraud_Results__c != 'Cancelled by Customer' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
                     //CH15: Start
@@ -1247,7 +1236,6 @@ global class initiateManualOnboarding
                                 objCase.Sub_Status__c = 'Approved';
                                 objCase.cc_Application_Stages__c = 'Completed';
                                 objCase.cc_CRM_Stage__c = 'APPROVED';
-                              //  objCase.OwnerId=System.Label.cc_prescreener;
                                 objCase.cc_Temporary_Limit_Increase_Expiry_Date__c=objCase.cc_Request_Type__c=='temporary'?Date.ValueOf(String.valueOf(finalresult.get('limitExpiryDate'))):null;
                         lstUpdateCase.add(objCase);
                         }
@@ -1303,7 +1291,6 @@ global class initiateManualOnboarding
             }
             //CH18: END
             
-            //System.debug('Pre screening result value in Future Methods:'+objCase.cc_Credit_Pre_Screening_Result__c);
             //CH23: Added a condition Fraud Result != Decline and Fraud Result != Cancelled by Customer in if condition
             //CH25: Added a condition Signature Verifier Result != Decline and Signature Verifier Result != Cancelled by Customer in if condition
             else if(objCase.Sub_Status__c == 'Documents Received' && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Approve' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Rejected' 
@@ -1361,7 +1348,7 @@ global class initiateManualOnboarding
             }
             //CH23: Added a condition Fraud Result != Decline and Fraud Result != Cancelled by Customer in if condition
             //CH25: Added a condition Signature Verifier Result != Decline and Signature Verifier Result != Cancelled by Customer in if condition
-            else if((objCase.Sub_Status__c == 'Referred by Evaluator' || objCase.Sub_Status__c == 'Referred by Approver' || objCase.Sub_Status__c == 'Referred  by Pre-Screener' || objCase.Sub_Status__c == 'Referred by Verifier' || objCase.Sub_Status__c == 'Referred by Maker' ) && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Expired' /*&& objCase.cc_Business_Approval_Result__c != 'Approve'*/ && objCase.cc_Business_Approval_Result__c != 'Decline' 
+            else if((objCase.Sub_Status__c == 'Referred by Evaluator' || objCase.Sub_Status__c == 'Referred by Approver' || objCase.Sub_Status__c == 'Referred  by Pre-Screener' || objCase.Sub_Status__c == 'Referred by Verifier' || objCase.Sub_Status__c == 'Referred by Maker' ) && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Expired' && objCase.cc_Business_Approval_Result__c != 'Decline'
                     && objCase.cc_Credit_Evaluation_Result__c != 'Rejected' && objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_Maker__c !='Decline' && objCase.cc_CEO_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Evaluation_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Verification_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Approval_Result__c  !='Cancelled by Customer' 
                     && objCase.cc_HR_Result__c !='Cancelled by Customer' && objCase.cc_Maker__c !='Send to Pre-Screener' && objCase.Fraud_Results__c != 'Decline' && objCase.Fraud_Results__c != 'Cancelled by Customer' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
@@ -1672,10 +1659,6 @@ global class initiateManualOnboarding
                                         '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_BT_LETTER_RECEIVED"}';
                                 }
                             }
-                            /*if(objCase.Sub_Status__c == 'Release Letter Accepted'){
-body = '{"crmCaseId": "'+objCase.Id +
-'","status":"APPROVED_PENDING_BT_LETTER_ACCEPTED"}';
-}*/
                             system.debug('---> BODY WHEN SERVICE CENTER RESULT IS RELEASE LETTER RECEIVED  --> '+body);
                             request.setBody(body);
                             request.setHeader('userId', objCase.Account.PersonEmail);
@@ -1712,8 +1695,6 @@ body = '{"crmCaseId": "'+objCase.Id +
 
                         //#CH21:START
                         if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                            /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE"}';*/
                             bodyObject.put('targetType','LIMIT_INCREASE');
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                         }
@@ -1722,8 +1703,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                             bodyObject.put('requestType','temporary');
                             bodyObject.put('duration',String.valueOf(objCase.cc_Temporary_Limit_Increase_Duration__c));
-                            /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';*/
                         }
                         //#CH21:END
 
@@ -1766,7 +1745,7 @@ body = '{"crmCaseId": "'+objCase.Id +
             
             /******************************************* CREDIT PRE SCREENING RESULT START ************************************************/
             
-            else if(objCase.Sub_Status__c == 'Discrepancies' /*&& objCase.Is_Doc_Dicrepancy__c == true*/ && objCase.cc_Credit_Pre_Screening_Result__c == 'Discrepancy in Documents'){
+            else if(objCase.Sub_Status__c == 'Discrepancies' && objCase.cc_Credit_Pre_Screening_Result__c == 'Discrepancy in Documents'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
                     body = '{"crmCaseId": "'+objCase.Id +
                         '","status":"DISCREPANCIES"}';
@@ -1826,21 +1805,12 @@ body = '{"crmCaseId": "'+objCase.Id +
                             //CH26: Start
                             //CH28: Start
                             if(objCase.Approved_Campaign_Name__c != null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
-                               /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                                '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                '","campaignId": "'+objCase.Approved_Campaign_Name__c +
-                                '","status":"APPROVED_PENDING_SIGNATURE"}'; */
                                 bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
                                 bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
                                 bodyObject.put('campaignId',String.valueOf(objCase.Approved_Campaign_Name__c));
                                 bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                             }
                             else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
-                                /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                                '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                '","campaignId": null,"status":"APPROVED_PENDING_SIGNATURE"}';*/
                                 bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
                                 bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
                                 bodyObject.put('campaignId',null);
@@ -1848,10 +1818,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                             }
                             else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c == 'ILA_GULF_AIR_COBRAND_01'){
                                 if(objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null){
-                                    /* body = '{"crmCaseId": "'+objCase.Id +
-                                    '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                                    '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                    '","campaignId": null,"membershipNumber": null,"status":"APPROVED_PENDING_SIGNATURE"}';*/
                                     bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
                                     bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
                                     bodyObject.put('campaignId',null);
@@ -1859,11 +1825,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                                     bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                                 }
                                 else if(objCase.cc_Approved_Embossing_line_4__c != null){
-                                    /* body = '{"crmCaseId": "'+objCase.Id +
-                                    '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                                    '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                    '","membershipNumber": "'+objCase.cc_Approved_Embossing_line_4__c +    
-                                    '","campaignId": null,"status":"APPROVED_PENDING_SIGNATURE"}';*/
                                     bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
                                     bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
                                     bodyObject.put('membershipNumber',String.valueOf(objCase.cc_Approved_Embossing_line_4__c));
@@ -1879,12 +1840,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                         //CH15: END
                         //#CH21: START
                         if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                            //CH12: Start
-                            /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                                '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';*/
-                            //CH12: END
                             bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
                             bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
                             bodyObject.put('targetType','LIMIT_INCREASE');
@@ -1894,12 +1849,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                         }
                         
                         if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent' ){
-                            //CH12: Start
-                            /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                                '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE"}';*/
-                            //CH12: END
                             bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
                             bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
                             bodyObject.put('targetType','LIMIT_INCREASE');
@@ -1957,13 +1906,11 @@ body = '{"crmCaseId": "'+objCase.Id +
                         HttpRequest request1 = new HttpRequest();
                         //CH14 : replace objCase.Region_Flag__c param with regionName 
                         //CH19: Start  
-                        //request1 = con.createRequest('GET', '/api/v1/credit-cards?includeOtherProducts=true', regionName);
                         request1 = con.createRequest('GET', System.Label.CC_EndPointGetCreditCardsIncludingOtherProducts, regionName);
                         //CH19: END
                         
                         request1.setHeader('userId', objCase.Account.PersonEmail);
                         request1.setHeader('customerId', objCase.Account.CIF__pc);
-                        // request1.setHeader('includeOtherProducts', 'true');
                         
                         system.debug('---> request1 --> '+request1.getBody());
                         HttpResponse response1 = http1.send(request1);
@@ -1990,7 +1937,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                                     m2=(List<Object>)m1.get('cardOptions');
                                 else if(m1.containsKey('pendingCards') != null)
                                     m2=(List<Object>)m1.get('pendingCards');
-                                //List<Object> m2 = (List<Object>)m1.get('cardOptions');
                                 
                                 System.debug('---> LIST m2 222--> '+m2);
                                 
@@ -2152,17 +2098,14 @@ body = '{"crmCaseId": "'+objCase.Id +
                                     objCase.Sub_Status__c = 'Approved';
                                     objCase.cc_Application_Stages__c = 'Completed';
                                     objCase.cc_CRM_Stage__c = 'APPROVED';
-                                    //objCase.cc_isDocumentReceived__c = true;
                                     objCase.cc_Signature_Verification_Date_Time__c = System.now();
                                     lstUpdateCase.add(objCase);
                                 }
                                 if(recordtypeName == 'Credit Card - Staff  Application'){
-                                    //objCase.Status = 'Closed';
                                     objCase.Sub_Status__c = 'Pending Disable EPP';
                                     objCase.cc_Application_Stages__c = 'Credit Buyout';
                                     objCase.cc_CRM_Stage__c = 'APPROVED';
                                     objCase.OwnerId = System.Label.Credit_Card_Regular_Buyout;
-                                    //objCase.cc_isDocumentReceived__c = true;
                                     lstUpdateCase.add(objCase);
                                 }
                                 //CH08: END
@@ -2190,13 +2133,11 @@ body = '{"crmCaseId": "'+objCase.Id +
                 HttpRequest request1 = new HttpRequest();
                 //CH14 : replace objCase.Region_Flag__c param with regionName 
                 //CH19: Start  
-                //request1 = con.createRequest('GET','/api/v1/credit-cards?includeOtherProducts=true', regionName);
                 request1 = con.createRequest('GET',System.Label.CC_EndPointGetCreditCardsIncludingOtherProducts, regionName);
                 //CH19: END
                 
                 request1.setHeader('userId', objCase.Account.PersonEmail);
                 request1.setHeader('customerId', objCase.Account.CIF__pc);
-                // request1.setHeader('includeOtherProducts', 'true');
                 
                 system.debug('---> request1 --> '+request1.getBody());
                 HttpResponse response1 = http1.send(request1);
@@ -2223,7 +2164,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                             m2=(List<Object>)m1.get('cardOptions');
                         else if(m1.containsKey('pendingCards') != null)
                             m2=(List<Object>)m1.get('pendingCards'); 
-                        //List<Object> m2 = (List<Object>)m1.get('cardOptions');
                         
                         System.debug('---> LIST m2 222--> '+m2);
                         
@@ -2297,7 +2237,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                     objCase.cc_Application_Stages__c = 'Completed';
                     objCase.cc_CRM_Stage__c = 'APPROVED';
                     objCase.cc_Temporary_Limit_Increase_Expiry_Date__c=objCase.cc_Request_Type__c=='temporary'?Date.ValueOf(String.valueOf(finalresult.get('limitExpiryDate'))):null;
-                    //objCase.cc_isDocumentReceived__c = true;
                     objCase.cc_Signature_Verification_Date_Time__c = System.now();
                     //CH43: Start
                     if(objCase.Is_Initiated_from_Upgrade_Case__c == true){
@@ -2333,13 +2272,11 @@ body = '{"crmCaseId": "'+objCase.Id +
                          HttpRequest request1 = new HttpRequest();
                          //CH14 : replace objCase.Region_Flag__c param with regionName 
                          //CH19: Start  
-                         //request1 = con.createRequest('GET', '/api/v1/credit-cards?includeOtherProducts=true', regionName);
                          request1 = con.createRequest('GET', System.Label.CC_EndPointGetCreditCardsIncludingOtherProducts, regionName);
                          //CH19: END
                          
                          request1.setHeader('userId', objCase.Account.PersonEmail);
                          request1.setHeader('customerId', objCase.Account.CIF__pc);
-                         // request1.setHeader('includeOtherProducts', 'true');
                          
                          system.debug('---> request1 --> '+request1.getBody());
                          HttpResponse response1 = http1.send(request1);
@@ -2366,7 +2303,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                                      m2=(List<Object>)m1.get('cardOptions');
                                  else if(m1.containsKey('pendingCards') != null)
                                      m2=(List<Object>)m1.get('pendingCards');
-                                 //List<Object> m2 = (List<Object>)m1.get('cardOptions');
                                  
                                  System.debug('---> LIST m2 222--> '+m2);
                                  
@@ -2504,7 +2440,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                                     	//CH33: END 
                                 	 }
                                      //CH28: END
-                                     Util.setOwnerQueue(queueIds, caseToRegion, objCase, CREDIT_CARD_REGULAR_BUYOUT_QUEUE); //objCase.OwnerId = System.Label.Credit_Card_Regular_Buyout;
+                                     Util.setOwnerQueue(queueIds, caseToRegion, objCase, CREDIT_CARD_REGULAR_BUYOUT_QUEUE);
                                      objCase.cc_Application_Stages__c = 'Credit Buyout';
                                      objCase.Sub_Status__c = 'Approved BT';
                                      objCase.cc_CRM_Stage__c = 'APPROVED';
@@ -2613,13 +2549,9 @@ body = '{"crmCaseId": "'+objCase.Id +
                             'crmCaseId' => objCase.Id
                         };
                         if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                            /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","status":"APPROVED_PENDING_SIGNATURE"}';*/
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                         }
                         if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase'){
-                            /*body = '{"crmCaseId": "'+objCase.Id +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE"}';*/
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                             bodyObject.put('targetType','LIMIT_INCREASE');
                         }
@@ -2953,7 +2885,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_CEO_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -2965,7 +2897,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_Credit_Approval_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -2979,7 +2911,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_Business_Approval_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -2992,7 +2924,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_Credit_Evaluation_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -3004,7 +2936,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_Credit_Verification_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -3016,7 +2948,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_Credit_Pre_Screening_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -3033,7 +2965,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.Fraud_Results__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -3047,7 +2979,7 @@ body = '{"crmCaseId": "'+objCase.Id +
                     if(objCase.cc_Signature_Verifier_Result__c == 'Decline'){
                         //CH31: Start
                         //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') /*&& objCase.Reapplying_Restriction_Period__c != null*/){
+                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
                             Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
                             accListToUpdateRestrictCreditCard.add(acc);
                         }
@@ -3250,7 +3182,6 @@ body = '{"crmCaseId": "'+objCase.Id +
         //CH31: END
         //CH43: Start
         if(setUpgradeCaseToInsert.size()>0){
-            //insert lstUpgradeCaseToInsert;
             CreateUpgradeCases upgCse = new CreateUpgradeCases(setUpgradeCaseToInsert);
             System.enqueueJob(upgCse);
         }
@@ -3265,30 +3196,9 @@ body = '{"crmCaseId": "'+objCase.Id +
         }else if(objCase.Reapplying_Restriction_Period__c == null){
             acc.Reapplying_Restriction_Period__pc = '1 Month';
         }
-    	//acc.Reapplying_Restriction_Period__pc = objCase.Reapplying_Restriction_Period__c;
 		return acc;
 	}
     //CH31: END
-    ////////////////////////////////Activate Credit Card Reminders //////////////////////////////////////////////
-    
-    //CH43: Start
-    /*@future(callout=true)
-    public static void CCCaseActivateReminders(Set<Id> setCaseId)
-    {
-        List<Case> lstUpdateCase = new List<Case>();
-        List<Case> lstCase = [Select id, status, Type, Account.PersonEmail, Customer_CIF__c, Activate_CreditCard_Reminders__c from Case where id in: setCaseId];
-        for(Case caseObj : lstCase)
-        {
-            caseObj.Activate_CreditCard_Reminders__c = true;
-            lstUpdateCase.add(caseObj);
-        }
-        if(lstUpdateCase.size()>0)
-            update lstUpdateCase;
-    }*/
-    //CH43: END
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    
     ////////////////////////////////// Stop Jamiyah Case Closure//////////////////////////////////
     
     @future(callout=true)
@@ -3608,7 +3518,6 @@ body = '{"crmCaseId": "'+objCase.Id +
         System_Action__c action = new System_Action__c();
         action.Account_Number__c = custId;
         action.Action__c = strAction;
-        //  action.Card_Number__c = objCase.cc_Requested_Card_Type__c;
         action.Case__c = CaseId;
         action.Account__c = AccId;
         action.Endpoint__c = path;
@@ -3672,7 +3581,6 @@ body = '{"crmCaseId": "'+objCase.Id +
     @future(callout=true)
     public static void UpdateCustomerDetailsForDNDupdate(Set<Id> setCaseId){
         
-        //ApiConnection con = new ApiConnection();
         List<System_Action__c> lst = new List<System_Action__c>();
         List<Case> casesToUpdate = new List<Case>();
         
@@ -3706,9 +3614,6 @@ body = '{"crmCaseId": "'+objCase.Id +
                 request.setTimeout(60000);
                 HttpResponse response = SM001_ApiCalls.updateCustomerDetailsAPI(request, Body);
                 
-                //Call the mock response
-                // MCK001_ApiCalls mck = new MCK001_ApiCalls();
-                // HttpResponse response = mck.updateCustomerDetailsAPI(request, 200);
                 
                 system.debug('UpdateCustomerDetailsForDNDupdate status code => ' + response.getStatusCode());
                 system.debug('UpdateCustomerDetailsForDNDupdate response => ' + response.getBody());
