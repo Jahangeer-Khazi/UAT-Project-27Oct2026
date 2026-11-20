@@ -49,6 +49,7 @@
                #CH40# #Aniss Mbarki# 05-04-2026# Added Logic for Credit Card - In-App DocuSign attah Documents Signing to an email 
                #CH42 #AITOGRAM Omar# 20/04/2026  Added null pointer for x_canary__pc field 
  			   #CH43# #Jahangeer Mohammed# 23/07/2026 Commented the code CCCaseActivateReminders methods as it is not required for reminder notifications and related fields - Automatic Creation of Upgrade Cases from Limit Increase Application (NBA-17560)
+               #CH44# #Jahangeer Mohammed# 20-11-2026# Added helper getRegionName() to replace the repeated Region Flag / Al Buraq region logic (logic unchanged)
 */            
 global class initiateManualOnboarding
 {
@@ -57,6 +58,18 @@ global class initiateManualOnboarding
     private static final String  CONTACT_CENTRE_QUEUE = 'Contact Centre';
     private static final String  IT_QUEUE = 'IT';
     private static final String  CREDIT_CARD_REGULAR_BUYOUT_QUEUE = 'Credit Card Regular Buyout';
+    //CH44: Start
+    /**
+    * @description Returns the API region for a case: Region_Flag__c, with '_alburaq' added for the Al Buraq case model.
+    */
+    private static String getRegionName(Case objCase){
+        String regionName = objCase.Region_Flag__c;
+        if(objCase.Case_Model__c == 'alburaq'){
+            regionName += '_alburaq';
+        }
+        return regionName;
+    }
+    //CH44: END
     
     @future(callout=true)
     public static void ManualOnboarding(Set<Id> setAccId)
@@ -450,10 +463,7 @@ global class initiateManualOnboarding
             Http http = new Http();
             HttpRequest request = new HttpRequest();
             //CH14 -Start:  
-            String regionName = objCase.Region_Flag__c;    
-            if(objCase.Case_Model__c == 'alburaq'){    
-                regionName += '_alburaq';  
-            }
+            String regionName = getRegionName(objCase); //CH44
             //CH19: Start
             request = con.createRequest('GET', System.Label.CC_EndPointGetCreditCards, regionName ); 
             //CH19: END
@@ -970,10 +980,7 @@ global class initiateManualOnboarding
             Http http = new Http();
             HttpRequest request = new HttpRequest();
             //CH14 -Start: 
-            String regionName = objCase.Region_Flag__c; 
-            if(objCase.Case_Model__c == 'alburaq'){ 
-                regionName += '_alburaq';   
-            } 
+            String regionName = getRegionName(objCase); //CH44
             //CH19: Start
             request = con.createRequest('PUT', System.Label.CC_EndPointCreditCardRequest, regionName);
             if(objCase.Account.x_canary__pc != null){
@@ -3213,10 +3220,7 @@ global class initiateManualOnboarding
             Http http = new Http();
             HttpRequest request = new HttpRequest();
             //CH14 -Start:  
-            String regionName = caseObj.Region_Flag__c; 
-            if(caseObj.Case_Model__c == 'alburaq'){ 
-                regionName += '_alburaq';   
-            }   
+            String regionName = getRegionName(caseObj); //CH44
             request = con.createRequest('PUT', '/api/v1/jameya/group/' + caseObj.Jamiyah_Id__c + '/status', regionName);  
             //CH14 -End:
             
@@ -3276,10 +3280,7 @@ global class initiateManualOnboarding
             HttpRequest request = new HttpRequest();
             //https://api.dev.ilabank.com/api/v1/government-data/wathiq/person/case?language=en&unit=neo
             //CH14 -Start:  
-            String regionName = cItem.Region_Flag__c;   
-            if(cItem.Case_Model__c == 'alburaq'){   
-                regionName += '_alburaq';   
-            }   
+            String regionName = getRegionName(cItem); //CH44
             //https://api.dev.ilabank.com/api/v1/government-data/wathiq/person/case?language=en&unit=neo    
             request = con.createRequest('PUT', '/api/v1/government-data/wathiq/person/case?', regionName);  
             //CH14 -End:
@@ -3325,10 +3326,9 @@ global class initiateManualOnboarding
             Http http = new Http();
             HttpRequest request = new HttpRequest();
             //CH14 -Start: 
-            String regionName = cItem.Region_Flag__c;
+            String regionName = getRegionName(cItem); //CH44
             String templateId ='CA';
             if(cItem.Case_Model__c == 'alburaq'){
-                regionName += '_alburaq';
                 templateId ='BU';
             }
             request = con.createRequest('POST', '/api/v1/accounts?', regionName);
@@ -3382,10 +3382,7 @@ global class initiateManualOnboarding
             Http http = new Http(); 
             HttpRequest request1 = new HttpRequest();    
             //CH14 -Start:  
-            String regionName = objCase.Region_Flag__c; 
-            if(objCase.Case_Model__c == 'alburaq'){ 
-                regionName += '_alburaq';   
-            }   
+            String regionName = getRegionName(objCase); //CH44
             request1 = con.createRequest('POST', '/api/v1/notifications?', regionName);     
             //CH14 -End:
             String sms = 'sms';
@@ -3449,10 +3446,7 @@ global class initiateManualOnboarding
             Http http = new Http(); 
             HttpRequest request1 = new HttpRequest();    
              
-            String regionName = objCase.Region_Flag__c; 
-            if(objCase.Case_Model__c == 'alburaq'){ 
-                regionName += '_alburaq';   
-            }   
+            String regionName = getRegionName(objCase); //CH44
             request1 = con.createRequest('POST', '/api/v1/credit-cards/limit/temporary?', regionName);     
            
             String body = ''; 
@@ -3589,10 +3583,7 @@ global class initiateManualOnboarding
         
         for(Case caseObj: caseObjList){
             try{
-                String regionName=caseObj.Region_Flag__c;
-                if(caseObj.Case_Model__c != null && caseObj.Case_Model__c == 'alburaq'){
-                    regionName += '_alburaq';
-                }
+                String regionName = getRegionName(caseObj); //CH44
                 System.debug( 'UpdateCustomerDetailsForDNDupdate region name'+ regionName);
                 HttpRequest request = con.createRequest('PUT','/api/v1/customers',regionName);
                 
