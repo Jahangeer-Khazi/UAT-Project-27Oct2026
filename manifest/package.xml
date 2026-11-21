@@ -189,6 +189,7 @@
         <members>CreditCardDeclineCasesController</members>
         <members>CreditCardDeclineCasesControllerTest</members>
         <members>CreditCardHandler</members>
+        <members>CreditCardHandlerAPI</members>
         <members>CreditCardRevokeRestrictionBatch</members>
         <members>CreditCardSendSMSReminder</members>
         <members>CreditCardSendSMSReminderTest</members>
