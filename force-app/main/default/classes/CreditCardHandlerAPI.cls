@@ -8,6 +8,8 @@
 *                    into helper methods (logic and API request bodies unchanged).
 *             #CH02# #Jahangeer Mohammed# 22-11-2026# Added helper methods for the duplicated code of initiateManualOnboarding.CCCaseUpdate
 *                    (send and log, card catalogue, status / campaign / approved bodies, signing details, stages, cross-selling).
+*             #CH03# #Jahangeer Mohammed# 22-11-2026# Moved all remaining request bodies of initiateManualOnboarding.CCCaseUpdate
+*                    into body methods (CCCaseUpdate REQUEST BODIES section; bodies unchanged).
 */
 public inherited sharing class CreditCardHandlerAPI {
     private static ApiConnection con = new ApiConnection();
@@ -396,6 +398,287 @@ public inherited sharing class CreditCardHandlerAPI {
             bodyObject.put('envelopeId',null);
             bodyObject.put('crmContactId',null);
         }
+    }
+
+    /********************************************* CCCaseUpdate REQUEST BODIES *********************************************/
+    /**
+    * @description CCCaseUpdate - PENDING body (Sub-Status Pending) for New Credit Card, Limit Increase (permanent / temporary) and Supplementary. Returns currentBody when no type matches.
+    */
+    public static String buildPendingUpdateBody(Case objCase, String currentBody){
+        String body = currentBody;
+        if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
+            if(objCase.cc_Name_on_the_Card__c !=null){
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+objCase.cc_Name_on_the_Card__c +
+                    '","status":"PENDING"}';
+            }
+            else{
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+null +
+                    ',"status":"PENDING"}';
+            }
+        }
+        /*#CH21# Start*/
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
+            if(objCase.cc_Name_on_the_Card__c !=null){
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+objCase.cc_Name_on_the_Card__c +
+                    '","targetType": "LIMIT_INCREASE","status":"PENDING" }';
+            }
+            else{
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+null +
+                    '","targetType": "LIMIT_INCREASE","status":"PENDING"}';
+            }
+        }
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
+            if(objCase.cc_Name_on_the_Card__c !=null){
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+objCase.cc_Name_on_the_Card__c +
+                    '","targetType": "LIMIT_INCREASE","status":"PENDING","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
+            }
+            else{
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+null +
+                    '","targetType": "LIMIT_INCREASE","status":"PENDING","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
+            }
+        }
+        /*#CH21# End*/
+        if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
+            //CH07: Start
+            if(objCase.cc_Name_on_the_Card__c !=null){
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
+                    '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING" }';
+            }
+            //CH07: END
+            else{
+                body = '{"crmCaseId": "'+objCase.Id +
+                    '","embossName": "'+null +
+                    '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING"}';
+            }
+        }
+        return body;
+    }
+
+    /**
+    * @description CH21: CCCaseUpdate - Documents Received body for a temporary Limit Increase.
+    */
+    public static String buildDocsReceivedTemporaryBody(Case objCase){
+        String body;
+        body = '{"pciNumber": "'+objCase.cc_Credit_Card_PCI_Number__c +'","crmCaseId": "'+objCase.Id +                             
+            '","targetType": "LIMIT_INCREASE","status":"IN_PROGRESS","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
+        return body;
+    }
+
+    /**
+    * @description CH06: CCCaseUpdate - Supplementary Card sent by the Maker to the Pre-Screener.
+    */
+    public static String buildSupplementaryPreScreenerBody(Case objCase){
+        String body;
+        body = '{"crmCaseId": "'+objCase.Id +
+            '","cardProductConfigurationId":'+SM001_ApiCalls.stringApiFormat(objCase.PrimaryCardProductConfigurationId__c)+
+            ',"targetType": "SUPPLEMENTARY_CARD","status":"IN_PROGRESS"}';
+        return body;
+    }
+
+    /**
+    * @description CH21 / CH39: CCCaseUpdate - body when the Service Centre returns the case to the Signature Verifier.
+    */
+    public static String buildReturnToSignatureVerifierBody(Case objCase){
+        String body = '';
+        Map<String, String> bodyObject = new Map<String, String>{
+            'crmCaseId' => objCase.Id
+        };
+
+        //#CH21:START
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
+            bodyObject.put('targetType','LIMIT_INCREASE');
+            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+        }
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
+            bodyObject.put('targetType','LIMIT_INCREASE');
+            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+            bodyObject.put('requestType','temporary');
+            bodyObject.put('duration',String.valueOf(objCase.cc_Temporary_Limit_Increase_Duration__c));
+        }
+        //#CH21:END
+
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.bs_Instrument_ID__c != null){
+            system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
+            if(objCase.Resend_DocuSign__c == 'In-App'){
+                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
+            }
+            else if(objCase.Resend_DocuSign__c == 'Email'){
+                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
+            }
+        }
+        body = JSON.serialize(bodyObject); 
+        return body;
+    }
+
+    /**
+    * @description CH12 / CH15 / CH21 / CH26 / CH28 / CH39: CCCaseUpdate - APPROVED_PENDING_SIGNATURE body (Credit Approval / HR approved).
+    */
+    public static String buildApprovedPendingSignatureBody(Case objCase){
+        String body = '';
+        Map<String, String> bodyObject = new Map<String, String>{
+            'crmCaseId' => objCase.Id
+        };
+
+        if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
+            //CH12: Start
+            //CH15: Start
+            //CH26: Start
+            //CH28: Start
+            if(objCase.Approved_Campaign_Name__c != null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
+                bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
+                bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
+                bodyObject.put('campaignId',String.valueOf(objCase.Approved_Campaign_Name__c));
+                bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+            }
+            else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
+                bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
+                bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
+                bodyObject.put('campaignId',null);
+                bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+            }
+            else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c == 'ILA_GULF_AIR_COBRAND_01'){
+                if(objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null){
+                    bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
+                    bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
+                    bodyObject.put('campaignId',null);
+                    bodyObject.put('membershipNumber',null);
+                    bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+                }
+                else if(objCase.cc_Approved_Embossing_line_4__c != null){
+                    bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
+                    bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
+                    bodyObject.put('membershipNumber',String.valueOf(objCase.cc_Approved_Embossing_line_4__c));
+                    bodyObject.put('campaignId',null);
+                    bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+                }
+
+            }
+            //CH28: END
+            //CH26: END
+            //CH12: END
+        }
+        //CH15: END
+        //#CH21: START
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
+            bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
+            bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
+            bodyObject.put('targetType','LIMIT_INCREASE');
+            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+            bodyObject.put('requestType','temporary');
+            bodyObject.put('duration',String.valueOf(objCase.cc_Temporary_Limit_Increase_Duration__c));
+        }
+
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent' ){
+            bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
+            bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
+            bodyObject.put('targetType','LIMIT_INCREASE');
+            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+        }
+        //#CH21: END
+        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') && objCase.bs_Instrument_ID__c != null){
+            system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
+            if(objCase.Resend_DocuSign__c == 'In-App'){
+                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
+            }
+            else if(objCase.Resend_DocuSign__c == 'Email'){
+                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
+            }
+        }
+        body = JSON.serialize(bodyObject);
+        return body;
+    }
+
+    /**
+    * @description CCCaseUpdate - APPROVED_PENDING_BT_PROCESSING body (Signature Verifier accepts, Buy Out).
+    */
+    public static String buildBuyOutPendingBody(Case objCase, Integer ApprovedCardProductConfigurationId){
+        String body;
+        body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
+            '","crmCaseId": "'+objCase.Id +
+            '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
+            '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
+            '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
+            '","status":"APPROVED_PENDING_BT_PROCESSING"}';
+        return body;
+    }
+
+    /**
+    * @description CH39: CCCaseUpdate - Re-Send / Re-Send In-App body. Also sets Resend_DocuSign__c and adds the case to lstUpdateCase (existing behaviour).
+    */
+    public static String buildResendSignatureBody(Case objCase, List<Case> lstUpdateCase){
+        String body = '';
+        Map<String, String> bodyObject = new Map<String, String>{
+            'crmCaseId' => objCase.Id
+        };
+        if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
+            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+        }
+        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase'){
+            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
+            bodyObject.put('targetType','LIMIT_INCREASE');
+        }
+        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') && objCase.bs_Instrument_ID__c != null){
+            system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
+            if(objCase.cc_Signature_Verifier_Result__c == 'Re-Send In-App'){
+                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
+                objCase.Resend_DocuSign__c = 'In-App';
+                lstUpdateCase.add(objCase);
+            }
+            else if(objCase.cc_Signature_Verifier_Result__c == 'Re-Send'){
+                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
+                objCase.Resend_DocuSign__c = 'Email';
+                lstUpdateCase.add(objCase);
+            }
+        }
+        body = JSON.serialize(bodyObject);
+        return body;
+    }
+
+    /**
+    * @description CCCaseUpdate - APPROVED_PENDING_BT_LETTER body (Balance Transfer processed, Buy Out).
+    */
+    public static String buildBtLetterPendingBody(Case objCase){
+        String body;
+        body = '{"crmCaseId": "'+objCase.Id +
+            '","transactionReference": "'+objCase.cc_Balance_Transfer_Reference_Number__c +
+            '","status":"APPROVED_PENDING_BT_LETTER"}';
+        return body;
+    }
+
+    /**
+    * @description CH21: CCCaseUpdate - APPROVED body for a Credit Limit Increase (In-Progress temporary with the requested limit,
+    *              Signature Verifier accepts with the approved limit). Temporary adds requestType, duration and limitExpiryDate (today).
+    */
+    public static String buildLimitIncreaseApprovedBody(Case objCase, Decimal creditLimit, Boolean isTemporary){
+        String body = '{"crmCaseId": "'+objCase.Id +
+            '","creditLimit": "'+creditLimit +
+            '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
+            '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
+            '","targetType": "LIMIT_INCREASE","status":"APPROVED"';
+        if(isTemporary){
+            body += ',"requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'","limitExpiryDate":"'+String.valueOf(System.today())+'"';
+        }
+        return body + '}';
+    }
+
+    /**
+    * @description CH12 / CH24: CCCaseUpdate - DECLINED body with the decline reasons (targetType LIMIT_INCREASE for Limit Increase, null for Credit Card).
+    */
+    public static String buildDeclineWithReasonsBody(Case objCase, String targetType, String decReason){
+        String body = '{"crmCaseId": "'+objCase.Id +
+            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
+            '","declineReasons": "'+decReason;
+        if(targetType != null){
+            body += '","targetType": "'+targetType;
+        }
+        return body + '","status":"DECLINED"}';
     }
 
     /********************************************* SEND, LOG, RESPONSE *********************************************/

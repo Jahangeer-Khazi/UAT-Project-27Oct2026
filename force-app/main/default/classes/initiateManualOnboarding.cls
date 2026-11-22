@@ -52,6 +52,7 @@
                #CH44# #Jahangeer Mohammed# 20-11-2026# Added helper getRegionName() to replace the repeated Region Flag / Al Buraq region logic (logic unchanged)
                #CH45# #Jahangeer Mohammed# 21-11-2026# Removed the duplicated code of CCCaseCreation and moved it to helper methods in the new class CreditCardHandlerAPI (API request bodies unchanged)
                #CH46# #Jahangeer Mohammed# 22-11-2026# Removed the duplicated code of CCCaseUpdate and moved it to helper methods in CreditCardHandlerAPI (logic and API request bodies unchanged)
+               #CH47# #Jahangeer Mohammed# 22-11-2026# Moved all remaining request bodies of CCCaseUpdate to CreditCardHandlerAPI (logic and API request bodies unchanged)
 */            
 global class initiateManualOnboarding
 {
@@ -580,58 +581,7 @@ global class initiateManualOnboarding
                && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_Maker__c !='Decline' && objCase.cc_CEO_Result__c!= 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Evaluation_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Verification_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Approval_Result__c  !='Cancelled by Customer' && objCase.cc_HR_Result__c !='Cancelled by Customer' 
                && objCase.cc_Maker__c !='Cancelled by Customer' && objCase.Fraud_Results__c != 'Decline' && objCase.Fraud_Results__c != 'Cancelled by Customer' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                 
-                if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                    if(objCase.cc_Name_on_the_Card__c !=null){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+objCase.cc_Name_on_the_Card__c +
-                            '","status":"PENDING"}';
-                    }
-                    else{
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+null +
-                            ',"status":"PENDING"}';
-                    }
-                }
-                /*#CH21# Start*/
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                    if(objCase.cc_Name_on_the_Card__c !=null){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+objCase.cc_Name_on_the_Card__c +
-                            '","targetType": "LIMIT_INCREASE","status":"PENDING" }';
-                    }
-                    else{
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+null +
-                            '","targetType": "LIMIT_INCREASE","status":"PENDING"}';
-                    }
-                }
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                    if(objCase.cc_Name_on_the_Card__c !=null){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+objCase.cc_Name_on_the_Card__c +
-                            '","targetType": "LIMIT_INCREASE","status":"PENDING","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    }
-                    else{
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+null +
-                            '","targetType": "LIMIT_INCREASE","status":"PENDING","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    }
-                }
-                /*#CH21# End*/
-                if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
-                    //CH07: Start
-                    if(objCase.cc_Name_on_the_Card__c !=null){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                            '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING" }';
-                    }
-                    //CH07: END
-                    else{
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","embossName": "'+null +
-                            '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING"}';
-                    }
-                }
+                body = CreditCardHandlerAPI.buildPendingUpdateBody(objCase, body);
                 HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
             }
             //CH03 : Commented the Pre-screening Result Condition by Jahangeer Mohammed.
@@ -696,11 +646,7 @@ global class initiateManualOnboarding
                     if(objCase.cc_Request_Type__c=='permanent'){
                         body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'IN_PROGRESS', true, false);
                     }else{
-                        body = '{"crmCaseId": "'+objCase.Id +
-                                '","creditLimit": "'+objCase.cc_Requested_Credit_Limit__c +
-                                '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'","limitExpiryDate":"'+String.valueOf(System.today())+'"}';
+                        body = CreditCardHandlerAPI.buildLimitIncreaseApprovedBody(objCase, objCase.cc_Requested_Credit_Limit__c, true);
                         
                     }
                     //CH12: END
@@ -753,8 +699,7 @@ global class initiateManualOnboarding
                     //CH16: END
                 }
                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                    body = '{"pciNumber": "'+objCase.cc_Credit_Card_PCI_Number__c +'","crmCaseId": "'+objCase.Id +                             
-                        '","targetType": "LIMIT_INCREASE","status":"IN_PROGRESS","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
+                    body = CreditCardHandlerAPI.buildDocsReceivedTemporaryBody(objCase);
                     //CH16: Start
                     if(objCase.cc_Customer_Response__c == 'Customer Not Responded'){
                         objCase.cc_Customer_Response__c = 'Customer Responded';
@@ -799,9 +744,7 @@ global class initiateManualOnboarding
             
             else if((objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card') && objCase.Sub_Status__c == 'In-Progress' && objCase.cc_Maker__c == 'Send to Pre-Screener' && objCase.cc_Credit_Pre_Screening_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer'){
                 //CH06 : use stringApiFormat function
-                body = '{"crmCaseId": "'+objCase.Id +
-                    '","cardProductConfigurationId":'+SM001_ApiCalls.stringApiFormat(objCase.PrimaryCardProductConfigurationId__c)+
-                    ',"targetType": "SUPPLEMENTARY_CARD","status":"IN_PROGRESS"}';
+                body = CreditCardHandlerAPI.buildSupplementaryPreScreenerBody(objCase);
                 
                 HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_SUPPLEMENTARY_APPLICATION);
             }
@@ -951,33 +894,7 @@ global class initiateManualOnboarding
                     objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_CEO_Result__c!= 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer')
                 {
                         //#CH39 : start
-                        Map<String, String> bodyObject = new Map<String, String>{
-                            'crmCaseId' => objCase.Id
-                        };
-
-                        //#CH21:START
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                            bodyObject.put('targetType','LIMIT_INCREASE');
-                            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                        }
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                            bodyObject.put('targetType','LIMIT_INCREASE');
-                            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                            bodyObject.put('requestType','temporary');
-                            bodyObject.put('duration',String.valueOf(objCase.cc_Temporary_Limit_Increase_Duration__c));
-                        }
-                        //#CH21:END
-
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.bs_Instrument_ID__c != null){
-                            system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
-                            if(objCase.Resend_DocuSign__c == 'In-App'){
-                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
-                            }
-                            else if(objCase.Resend_DocuSign__c == 'Email'){
-                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
-                            }
-                        }
-                        body = JSON.serialize(bodyObject); 
+                        body = CreditCardHandlerAPI.buildReturnToSignatureVerifierBody(objCase);
                         //#CH39 : end
                         HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                         
@@ -1008,76 +925,7 @@ global class initiateManualOnboarding
                      objCase.cc_Signature_Verifier_Result__c != 'Accept' && objCase.cc_Signature_Verifier_Result__c != 'Re-Send' && objCase.cc_Signature_Verifier_Result__c != 'Re-Send In-App' && objCase.cc_Signature_Verifier_Result__c != 'Refer to Service Center' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer') ||
                     objCase.cc_HR_Result__c == 'Approved' && objCase.Sub_Status__c == 'Pending Signature Verification' &&  objCase.cc_Signature_Verifier_Result__c != 'Accept' && objCase.cc_Signature_Verifier_Result__c != 'Re-Send' && objCase.cc_Signature_Verifier_Result__c != 'Re-Send In-App' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                         //#CH39 : start
-                        Map<String, String> bodyObject = new Map<String, String>{
-                            'crmCaseId' => objCase.Id
-                        };
-
-                        if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                            //CH12: Start
-                            //CH15: Start
-                            //CH26: Start
-                            //CH28: Start
-                            if(objCase.Approved_Campaign_Name__c != null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
-                                bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
-                                bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
-                                bodyObject.put('campaignId',String.valueOf(objCase.Approved_Campaign_Name__c));
-                                bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                            }
-                            else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
-                                bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
-                                bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
-                                bodyObject.put('campaignId',null);
-                                bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                            }
-                            else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c == 'ILA_GULF_AIR_COBRAND_01'){
-                                if(objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null){
-                                    bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
-                                    bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
-                                    bodyObject.put('campaignId',null);
-                                    bodyObject.put('membershipNumber',null);
-                                    bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                                }
-                                else if(objCase.cc_Approved_Embossing_line_4__c != null){
-                                    bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
-                                    bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
-                                    bodyObject.put('membershipNumber',String.valueOf(objCase.cc_Approved_Embossing_line_4__c));
-                                    bodyObject.put('campaignId',null);
-                                    bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                                }
-                                
-                            }
-                            //CH28: END
-                            //CH26: END
-                            //CH12: END
-                        }
-                        //CH15: END
-                        //#CH21: START
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                            bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
-                            bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
-                            bodyObject.put('targetType','LIMIT_INCREASE');
-                            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                            bodyObject.put('requestType','temporary');
-                            bodyObject.put('duration',String.valueOf(objCase.cc_Temporary_Limit_Increase_Duration__c));
-                        }
-                        
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent' ){
-                            bodyObject.put('cardProductConfigurationId',String.valueOf(objCase.PrimaryCardProductConfigurationId__c));
-                            bodyObject.put('creditLimit',String.valueOf(objCase.cc_Approved_Credit_Limit__c));
-                            bodyObject.put('targetType','LIMIT_INCREASE');
-                            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                        }
-                        //#CH21: END
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') && objCase.bs_Instrument_ID__c != null){
-                            system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
-                            if(objCase.Resend_DocuSign__c == 'In-App'){
-                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
-                            }
-                            else if(objCase.Resend_DocuSign__c == 'Email'){
-                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
-                            }
-                        }
-                        body = JSON.serialize(bodyObject);
+                        body = CreditCardHandlerAPI.buildApprovedPendingSignatureBody(objCase);
                         //#CH39 : End
 
                         request.setTimeout(120000);
@@ -1198,20 +1046,12 @@ global class initiateManualOnboarding
                  //#CH21:START
                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
                    
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                        '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                        '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                        '","targetType": "LIMIT_INCREASE","status":"APPROVED"}';
+                    body = CreditCardHandlerAPI.buildLimitIncreaseApprovedBody(objCase, objCase.cc_Approved_Credit_Limit__c, false);
                 }
                
                   if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
                            
-                      body = '{"crmCaseId": "'+objCase.Id +
-                                '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                '","targetType": "LIMIT_INCREASE","status":"APPROVED","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'","limitExpiryDate":"'+String.valueOf(System.today())+'"}';
+                      body = CreditCardHandlerAPI.buildLimitIncreaseApprovedBody(objCase, objCase.cc_Approved_Credit_Limit__c, true);
                         }
                 //#CH21:END
                 HttpResponse response = CreditCardHandlerAPI.sendCardRequest(request, objCase, body);
@@ -1324,12 +1164,7 @@ global class initiateManualOnboarding
                              //CH28: Added Is_Balance_Transfer__c in if condition for Cobranded Cards
                              else if((objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' || objCase.Is_Balance_Transfer__c == true) && objCase.cc_Approved_Transfer_Type__c == 'Buy Out'){
                                  if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                                     body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                         '","crmCaseId": "'+objCase.Id +
-                                         '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                         '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                         '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                         '","status":"APPROVED_PENDING_BT_PROCESSING"}';
+                                     body = CreditCardHandlerAPI.buildBuyOutPendingBody(objCase, ApprovedCardProductConfigurationId);
                                  }
                                  
                                  HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
@@ -1368,30 +1203,7 @@ global class initiateManualOnboarding
                     objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_HR_Result__c != 'Decline' && objCase.Fraud_Results__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Decline'){
                         
                         //#CH39 : start
-                        Map<String, String> bodyObject = new Map<String, String>{
-                            'crmCaseId' => objCase.Id
-                        };
-                        if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                        }
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase'){
-                            bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
-                            bodyObject.put('targetType','LIMIT_INCREASE');
-                        }
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') && objCase.bs_Instrument_ID__c != null){
-                            system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
-                            if(objCase.cc_Signature_Verifier_Result__c == 'Re-Send In-App'){
-                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
-                                objCase.Resend_DocuSign__c = 'In-App';
-                                lstUpdateCase.add(objCase);
-                            }
-                            else if(objCase.cc_Signature_Verifier_Result__c == 'Re-Send'){
-                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
-                                objCase.Resend_DocuSign__c = 'Email';
-                                lstUpdateCase.add(objCase);
-                            }
-                        }
-                        body = JSON.serialize(bodyObject);
+                        body = CreditCardHandlerAPI.buildResendSignatureBody(objCase, lstUpdateCase);
                         //#CH39 : End
 
                         HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
@@ -1424,9 +1236,7 @@ global class initiateManualOnboarding
                     (objCase.cc_Operations_Result__c == 'Balance Transfer Processed' &&  (objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' || objCase.Is_Balance_Transfer__c == true) && objCase.cc_Approved_Transfer_Type__c == 'Buy Out' &&
                      objCase.cc_HR_Result__c == 'Approved' && objCase.cc_HR_Result__c != 'Decline' && objCase.cc_HR_Result__c != 'Accept Release Letter' && objcase.cc_Credit_Evaluation_Result__c != 'Accept Release Letter' && objCase.cc_Signature_Verifier_Result__c != 'Decline')){
                          if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){ 
-                             body = '{"crmCaseId": "'+objCase.Id +
-                                 '","transactionReference": "'+objCase.cc_Balance_Transfer_Reference_Number__c +
-                                 '","status":"APPROVED_PENDING_BT_LETTER"}';
+                             body = CreditCardHandlerAPI.buildBtLetterPendingBody(objCase);
                          }
                         
                          HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
@@ -1504,10 +1314,7 @@ global class initiateManualOnboarding
                    //CH25: Added a condition Signature Verifier Result == Decline in if condition
                     if((objCase.cc_Credit_Approval_Result__c == 'Decline' || objCase.cc_Business_Approval_Result__c == 'Decline' || objCase.cc_Credit_Evaluation_Result__c == 'Decline' || objCase.cc_Credit_Verification_Result__c == 'Decline' || objCase.cc_Credit_Pre_Screening_Result__c == 'Decline' || objCase.cc_CEO_Result__c == 'Decline' || objCase.Fraud_Results__c == 'Decline' || objCase.cc_Signature_Verifier_Result__c == 'Decline') && objCase.cc_HR_Result__c != 'Approved'){
                     //CH12: Start
-                    body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","declineReasons": "'+decReason +
-                            '","status":"DECLINED"}';
+                    body = CreditCardHandlerAPI.buildDeclineWithReasonsBody(objCase, null, decReason);
                     //CH12: END
                     }
                     //CH24: Start
@@ -1533,10 +1340,7 @@ global class initiateManualOnboarding
                     //////////////////////////////////////// Start Non Staff - Decline Conditions ////////////////////////////////////////////
                     if((objCase.cc_Credit_Approval_Result__c == 'Decline' || objCase.cc_Business_Approval_Result__c == 'Decline' || objCase.cc_Credit_Evaluation_Result__c == 'Decline' || objCase.cc_Credit_Verification_Result__c == 'Decline' || objCase.cc_Credit_Pre_Screening_Result__c == 'Decline' || objCase.cc_CEO_Result__c == 'Decline' || objCase.cc_Signature_Verifier_Result__c == 'Decline' || objCase.Fraud_Results__c == 'Decline') && objCase.cc_HR_Result__c != 'Approved'){
                     //CH12: Start
-                    body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","declineReasons": "'+decReason +
-                            '","targetType": "LIMIT_INCREASE","status":"DECLINED"}';
+                    body = CreditCardHandlerAPI.buildDeclineWithReasonsBody(objCase, 'LIMIT_INCREASE', decReason);
                     //CH12: END
                     }
                    //////////////////////////////////////// End Non Staff - Decline Conditions ////////////////////////////////////////////
