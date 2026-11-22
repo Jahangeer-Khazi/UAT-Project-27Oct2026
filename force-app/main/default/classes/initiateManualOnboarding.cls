@@ -51,8 +51,8 @@
  			   #CH43# #Jahangeer Mohammed# 23/07/2026 Commented the code CCCaseActivateReminders methods as it is not required for reminder notifications and related fields - Automatic Creation of Upgrade Cases from Limit Increase Application (NBA-17560)
                #CH44# #Jahangeer Mohammed# 20-11-2026# Added helper getRegionName() to replace the repeated Region Flag / Al Buraq region logic (logic unchanged)
                #CH45# #Jahangeer Mohammed# 21-11-2026# Removed the duplicated code of CCCaseCreation and moved it to helper methods in the new class CreditCardHandlerAPI (API request bodies unchanged)
-               #CH46# #Jahangeer Mohammed# 22-11-2026# Removed the duplicated code of CCCaseUpdate and moved it to helper methods in CreditCardHandlerAPI (logic and API request bodies unchanged)
-               #CH47# #Jahangeer Mohammed# 22-11-2026# Moved all remaining request bodies of CCCaseUpdate to CreditCardHandlerAPI (logic and API request bodies unchanged)
+                      #Jahangeer Mohammed# 22-11-2026# Removed the duplicated code of CCCaseUpdate and moved it to helper methods in CreditCardHandlerAPI (logic and API request bodies unchanged)
+                      #Jahangeer Mohammed# 22-11-2026# Moved all remaining request bodies of CCCaseUpdate to CreditCardHandlerAPI (logic and API request bodies unchanged)
 */            
 global class initiateManualOnboarding
 {
