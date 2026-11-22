@@ -51,6 +51,7 @@
  			   #CH43# #Jahangeer Mohammed# 23/07/2026 Commented the code CCCaseActivateReminders methods as it is not required for reminder notifications and related fields - Automatic Creation of Upgrade Cases from Limit Increase Application (NBA-17560)
                #CH44# #Jahangeer Mohammed# 20-11-2026# Added helper getRegionName() to replace the repeated Region Flag / Al Buraq region logic (logic unchanged)
                #CH45# #Jahangeer Mohammed# 21-11-2026# Removed the duplicated code of CCCaseCreation and moved it to helper methods in the new class CreditCardHandlerAPI (API request bodies unchanged)
+               #CH46# #Jahangeer Mohammed# 22-11-2026# Removed the duplicated code of CCCaseUpdate and moved it to helper methods in CreditCardHandlerAPI (logic and API request bodies unchanged)
 */            
 global class initiateManualOnboarding
 {
@@ -631,24 +632,7 @@ global class initiateManualOnboarding
                             '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING"}';
                     }
                 }
-                system.debug('---> BODY --> '+body);
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
             }
             //CH03 : Commented the Pre-screening Result Condition by Jahangeer Mohammed.
             //CH23: Added a condition Fraud Result != Decline and Fraud Result != Cancelled by Customer in if condition
@@ -661,34 +645,11 @@ global class initiateManualOnboarding
                     if(objCase.cc_Credit_Pre_Screening_Result__c == 'Accept' && objCase.cc_Credit_Evaluation_Result__c != 'Accept' && objCase.cc_Credit_Verification_Result__c != 'Approve'){
                         //CH12: Start
                         //CH26: Start
-                        if(objCase.Campaign_Name__c != null){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","campaignId": "'+objCase.Campaign_Name__c +
-                            '","status":"IN_PROGRESS"}';
-                        }
-                        else if(objCase.Campaign_Name__c == null){
-                            System.debug('Campaign Name is Blank');
-                            body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","campaignId": null,"status":"IN_PROGRESS"}';
-                        }
+                        body = CreditCardHandlerAPI.buildCampaignBody(objCase, objCase.Campaign_Name__c, 'IN_PROGRESS', true);
                         //CH26: END
                         //CH12: END
-                        system.debug('---> BODY IN_PROGRESS WHEN PRE_SCREENER ACCEPTS IN CREDIT CARD APPLICATION --> '+body);               
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request IN_PROGRESS WHEN PRE_SCREENER ACCEPTS IN CREDIT CARD APPLICATION --> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        if (response.getStatusCode() != 200)
-                        {
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                        if (response.getStatusCode() == 200)
                         {
                             System.debug(response.getBody());
                             Map<String, Object> deserializeResponse = (Map<String, Object>)JSON.deserializeUntyped(response.getBody());// meta, data
@@ -713,72 +674,18 @@ global class initiateManualOnboarding
                     else if(objCase.cc_Credit_Pre_Screening_Result__c == 'Accept' && objCase.cc_Credit_Evaluation_Result__c == 'Accept' && objCase.cc_Credit_Verification_Result__c != 'Approve'){
                         //CH12: Start
                         //CH26:Start
-                        if(objCase.Approved_Campaign_Name__c != null){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","campaignId": "'+objCase.Approved_Campaign_Name__c +
-                            '","status":"IN_PROGRESS"}';
-                        }
-                        else if(objCase.Approved_Campaign_Name__c == null){
-                             body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","campaignId": null,"status":"IN_PROGRESS"}';
-                        }
+                        body = CreditCardHandlerAPI.buildCampaignBody(objCase, objCase.Approved_Campaign_Name__c, 'IN_PROGRESS', true);
                        //CH26: END
                         //CH12: END
-                        system.debug('---> BODY IN_PROGRESS WHEN EVALUATOR ACCEPTS IN CREDIT CARD APPLICATION --> '+body);               
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request IN_PROGRESS WHEN EVALUATOR ACCEPTS IN CREDIT CARD APPLICATION --> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        
-                        if (response.getStatusCode() != 200)
-                        {
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
-                        {
-                            System.debug(response.getBody());
-                        }
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                     }
                     else if(objCase.cc_Credit_Pre_Screening_Result__c == 'Accept' && objCase.cc_Credit_Evaluation_Result__c == 'Accept' && objCase.cc_Credit_Verification_Result__c == 'Approve'){
                         //CH12: Start
                         //CH26: Start
-                        if(objCase.Approved_Campaign_Name__c != null){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","campaignId": "'+objCase.Approved_Campaign_Name__c +
-                            '","status":"IN_PROGRESS"}';
-                        }
-                        else if(objCase.Approved_Campaign_Name__c == null){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","campaignId": null,"status":"IN_PROGRESS"}';
-                        }
+                        body = CreditCardHandlerAPI.buildCampaignBody(objCase, objCase.Approved_Campaign_Name__c, 'IN_PROGRESS', true);
                        //CH26: END
                         //CH12: END
-                        system.debug('---> BODY IN_PROGRESS WHEN VERIFIER ACCEPTS IN CREDIT CARD APPLICATION --> '+body);               
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request IN_PROGRESS WHEN VERIFIER ACCEPTS IN CREDIT CARD APPLICATION --> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        
-                        if (response.getStatusCode() != 200)
-                        {
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
-                        {
-                            System.debug(response.getBody());
-                        }
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                     }
                     //CH15: END
                 }
@@ -787,9 +694,7 @@ global class initiateManualOnboarding
                     //CH12: Start
                     /*#CH21# Start*/
                     if(objCase.cc_Request_Type__c=='permanent'){
-                        body = '{"crmCaseId": "'+objCase.Id + 
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","targetType": "LIMIT_INCREASE","status":"IN_PROGRESS"}';
+                        body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'IN_PROGRESS', true, false);
                     }else{
                         body = '{"crmCaseId": "'+objCase.Id +
                                 '","creditLimit": "'+objCase.cc_Requested_Credit_Limit__c +
@@ -800,30 +705,14 @@ global class initiateManualOnboarding
                     }
                     //CH12: END
                     /*#CH21# End*/
-                    system.debug('---> BODY IN_PROGRESS --> '+body);               
-                    request.setBody(body);
-                    request.setHeader('userId', objCase.Account.PersonEmail);
-                    request.setHeader('customerId', objCase.Account.CIF__pc);
-                    
-                    system.debug('---> request IN_PROGRESS--> '+request.getBody());
-                    HttpResponse response = http.send(request);
-                    
-                    if (response.getStatusCode() != 200)
-                    {
-                        System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                        //CH29: Added isAPIFailed parameter in the method
-                        lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                    }
-                    else
+                    HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                    if (response.getStatusCode() == 200)
                     {
                         If(objCase.cc_Request_Type__c=='temporary'){
                              System.debug('finalapproval##'+response.getBody());
                                 Map<String,Object> results = (Map<String,Object>)JSON.deserializeUntyped(response.getBody());
                                 Map<String,Object> finalresult =(Map<String, Object>)results.get('data');
-                                objCase.Status = 'Closed';
-                                objCase.Sub_Status__c = 'Approved';
-                                objCase.cc_Application_Stages__c = 'Completed';
-                                objCase.cc_CRM_Stage__c = 'APPROVED';
+                                CreditCardHandlerAPI.markApproved(objCase);
                                 objCase.cc_Temporary_Limit_Increase_Expiry_Date__c=objCase.cc_Request_Type__c=='temporary'?Date.ValueOf(String.valueOf(finalresult.get('limitExpiryDate'))):null;
                         lstUpdateCase.add(objCase);
                         }
@@ -833,49 +722,14 @@ global class initiateManualOnboarding
                 } 
                 
                
-                system.debug('---> BODY IN_PROGRESS --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request IN_PROGRESS--> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
             }
             //CH18: Start
             //CH25: Added a condition Signature Verifier Result != Decline and Signature Verifier Result != Cancelled by Customer in if condition
             else if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card' && objCase.Sub_Status__c == 'Follow Up' && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Approve' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Accept' && 
                     objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Evaluation_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Verification_Result__c !='Cancelled by Customer' &&  objCase.cc_Credit_Approval_Result__c  !='Cancelled by Customer' && objCase.cc_HR_Result__c !='Cancelled by Customer' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
-                body = '{"crmCaseId": "'+objCase.Id +
-                    '","status":"FOLLOW_UP"}';
-                system.debug('---> BODY IN FOLLOW UP Condition --> '+body);
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
-                {
-                    System.debug(response.getBody());
-                }
+                body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'FOLLOW_UP', false, false);
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
             }
             //CH18: END
             
@@ -886,13 +740,11 @@ global class initiateManualOnboarding
                     && objCase.cc_HR_Result__c !='Cancelled by Customer' && objCase.cc_Maker__c !='Cancelled by Customer' && objCase.Fraud_Results__c != 'Decline' && objCase.Fraud_Results__c != 'Cancelled by Customer' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
                 
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","status":"IN_PROGRESS"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'IN_PROGRESS', false, false);
                 }
                 //#CH21# START
                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                    body = '{"crmCaseId": "'+objCase.Id +                             
-                        '","targetType": "LIMIT_INCREASE","status":"IN_PROGRESS"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'IN_PROGRESS', false, false);
                     //CH16: Start
                     if(objCase.cc_Customer_Response__c == 'Customer Not Responded'){
                         objCase.cc_Customer_Response__c = 'Customer Responded';
@@ -911,141 +763,38 @@ global class initiateManualOnboarding
                 }
                 //#CH21# END
                 if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
-                    body = '{"crmCaseId": "'+objCase.Id + 
-                        '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                        '","targetType": "SUPPLEMENTARY_CARD","status":"IN_PROGRESS"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'IN_PROGRESS', true, false);
                 }
-                system.debug('---> BODY IN DOCS RECEIVED --> '+body);
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
             }
             //CH23: Added a condition Fraud Result != Decline and Fraud Result != Cancelled by Customer in if condition
             //CH25: Added a condition Signature Verifier Result != Decline and Signature Verifier Result != Cancelled by Customer in if condition
             else if((objCase.Sub_Status__c == 'Referred by Evaluator' || objCase.Sub_Status__c == 'Referred by Approver' || objCase.Sub_Status__c == 'Referred  by Pre-Screener' || objCase.Sub_Status__c == 'Referred by Verifier' || objCase.Sub_Status__c == 'Referred by Maker' ) && objCase.cc_Credit_Approval_Result__c != 'Approve' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Expired' && objCase.cc_Business_Approval_Result__c != 'Decline'
                     && objCase.cc_Credit_Evaluation_Result__c != 'Rejected' && objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_CEO_Result__c != 'Decline' && objCase.cc_Maker__c !='Decline' && objCase.cc_CEO_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Evaluation_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Verification_Result__c !='Cancelled by Customer' && objCase.cc_Credit_Approval_Result__c  !='Cancelled by Customer' 
                     && objCase.cc_HR_Result__c !='Cancelled by Customer' && objCase.cc_Maker__c !='Send to Pre-Screener' && objCase.Fraud_Results__c != 'Decline' && objCase.Fraud_Results__c != 'Cancelled by Customer' && objCase.cc_Signature_Verifier_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Cancelled by Customer'){
-                if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                    if(objCase.Sub_Status__c == 'Referred by Evaluator' ){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","status":"REFERRED_BY_EVALUATOR"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred by Approver'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","status":"REFERRED_BY_APPROVER"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred  by Pre-Screener'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","status":"REFERRED_BY_PRESCREENER"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred by Verifier'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","status":"REFERRED_BY_VERIFIER"}';
-                    }
+                //#CH21#: Referred by Evaluator / Approver / Pre-Screener / Verifier
+                String referredStatus = CreditCardHandlerAPI.getReferredStatus(objCase.Sub_Status__c);
+                if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card' && referredStatus != null){
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, referredStatus, false, false);
                 }
-                //#CH21#:START
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                    if(objCase.Sub_Status__c == 'Referred by Evaluator' ){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_EVALUATOR"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred by Approver'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_APPROVER"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred  by Pre-Screener'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_PRESCREENER"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred by Verifier'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_VERIFIER"}';
-                    }
-                }
-                
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                    if(objCase.Sub_Status__c == 'Referred by Evaluator' ){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_EVALUATOR","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred by Approver'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_APPROVER","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred  by Pre-Screener'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_PRESCREENER","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    }
-                    else if(objCase.Sub_Status__c == 'Referred by Verifier'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_VERIFIER","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    }
+                if(referredStatus != null){
+                    body = CreditCardHandlerAPI.buildLimitIncreaseStatusBody(objCase, referredStatus, false, body);
                 }
                 //#CH21#:END
                 if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
                     if(objCase.Sub_Status__c == 'Referred by Maker' ){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","targetType": "SUPPLEMENTARY_CARD","status":"REFERRED_BY_MAKER"}';
+                        body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'REFERRED_BY_MAKER', false, false);
                     }
                 }
-                system.debug('---> BODY in REFER CONDITION --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
             }
             ///////////////////////////////////////// SUPPLEMEMTARY MAKER/ PRE SCREENER - PENDING RELATIONSHIP //////////////////////////////////////////////////////////////////////
             
             else if((objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card') && objCase.Sub_Status__c == 'Pending Relationship' && objCase.cc_Maker__c == 'Pending Relationship Establishment' && objCase.cc_Credit_Pre_Screening_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer'){
                 
-                body = '{"crmCaseId": "'+objCase.Id +
-                    '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING_RELATIONSHIP"}';
+                body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'PENDING_RELATIONSHIP', false, false);
                 
-                system.debug('---> SUPPLEMENTARY - MAKER PEnding Relationship --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200) 
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Supplementary Application', 'Credit Card',true);
-                } 
-                else 
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_SUPPLEMENTARY_APPLICATION);
             }
             
             else if((objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card') && objCase.Sub_Status__c == 'In-Progress' && objCase.cc_Maker__c == 'Send to Pre-Screener' && objCase.cc_Credit_Pre_Screening_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer'){
@@ -1054,74 +803,21 @@ global class initiateManualOnboarding
                     '","cardProductConfigurationId":'+SM001_ApiCalls.stringApiFormat(objCase.PrimaryCardProductConfigurationId__c)+
                     ',"targetType": "SUPPLEMENTARY_CARD","status":"IN_PROGRESS"}';
                 
-                system.debug('---> SUPPLEMENTARY - MAKER Send to PRESCREENER --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200) 
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Supplementary Application', 'Credit Card',true);
-                } 
-                else 
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_SUPPLEMENTARY_APPLICATION);
             }
             
             else if((objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card') && objCase.Sub_Status__c == 'Pending Relationship' && objCase.cc_Credit_Pre_Screening_Result__c == 'Pending Relationship Establishment' && objCase.cc_Credit_Pre_Screening_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && objCase.cc_Maker__c != 'Refer to Service Center' && objCase.cc_Maker__c != 'Decline' && objCase.cc_Maker__c != 'Cancelled by Customer'  && objCase.cc_Maker__c != 'Pending Relationship Establishment' && objCase.cc_Maker__c !='Decline'){
                 
-                body = '{"crmCaseId": "'+objCase.Id +
-                    '","targetType": "SUPPLEMENTARY_CARD","status":"PENDING_RELATIONSHIP"}';
+                body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'PENDING_RELATIONSHIP', false, false);
                 
-                system.debug('---> SUPPLEMENTARY - PRESCREENER Pending Relationship --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200) 
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Supplementary Application', 'Credit Card',true);
-                } 
-                else 
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_SUPPLEMENTARY_APPLICATION);
             }
             
             else if((objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card') && objCase.Sub_Status__c == 'Referred  by Pre-Screener' && objCase.cc_Credit_Pre_Screening_Result__c == 'Refer to Service Center' && objCase.cc_Credit_Pre_Screening_Result__c != 'Accept' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer' && objCase.cc_Maker__c != 'Refer to Service Center' && objCase.cc_Maker__c != 'Decline' && objCase.cc_Maker__c != 'Cancelled by Customer'  && objCase.cc_Maker__c != 'Pending Relationship Establishment'){
                 
-                body = '{"crmCaseId": "'+objCase.Id +
-                    '","targetType": "SUPPLEMENTARY_CARD","status":"REFERRED_BY_PRESCREENER"}';
+                body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'REFERRED_BY_PRESCREENER', false, false);
                 
-                system.debug('---> SUPPLEMENTARY - PRESCREENER REFER TO SC --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200) 
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Supplementary Application', 'Credit Card',true);
-                } 
-                else 
-                {
-                    System.debug(response.getBody());
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_SUPPLEMENTARY_APPLICATION);
             }
             //#CH17 : add " || objCase.cc_Maker__c == 'Accept' "
             else if((objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card')  && (objCase.cc_Credit_Pre_Screening_Result__c == 'Accept' || objCase.cc_Maker__c == 'Accept') && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Expired' && objCase.cc_Credit_Pre_Screening_Result__c !='Cancelled by Customer'  && objCase.cc_Maker__c != 'Decline' && objCase.cc_Maker__c != 'Cancelled by Customer'  && objCase.cc_Maker__c != 'Pending Relationship Establishment' && objCase.cc_Maker__c != 'Refer to Service Center'){
@@ -1210,11 +906,8 @@ global class initiateManualOnboarding
                         else 
                         {
                             System.debug('Response in SUPP - Prescreener Accepts - : '+suppCardResp.getBody());
-                            objCase.Status = 'Closed';
-                            objCase.Sub_Status__c = 'Approved';
+                            CreditCardHandlerAPI.markApproved(objCase);
                             objCase.cc_Credit_Pre_Screening_Result_Date_Time__c = system.now();
-                            objCase.cc_CRM_Stage__c = 'APPROVED';
-                            objCase.cc_Application_Stages__c = 'Completed';
                             objSuppCard.Status__c = 'Active';
                             
                             //#CH07 -Begin
@@ -1239,32 +932,13 @@ global class initiateManualOnboarding
                         objCase.cc_Operations_Result__c == 'Balance Transfer Processed' && objCase.cc_Approved_Transfer_Type__c == 'Buy Out' && (objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' || objCase.Is_Balance_Transfer__c == true))){
                             if(objCase.Sub_Status__c == 'Release Letter Received'){
                                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                                    body = '{"crmCaseId": "'+objCase.Id +
-                                        '","status":"APPROVED_PENDING_BT_LETTER_RECEIVED"}';
+                                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'APPROVED_PENDING_BT_LETTER_RECEIVED', false, false);
                                 }
                                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase'){
-                                    body = '{"crmCaseId": "'+objCase.Id +
-                                        '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_BT_LETTER_RECEIVED"}';
+                                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'APPROVED_PENDING_BT_LETTER_RECEIVED', false, false);
                                 }
                             }
-                            system.debug('---> BODY WHEN SERVICE CENTER RESULT IS RELEASE LETTER RECEIVED  --> '+body);
-                            request.setBody(body);
-                            request.setHeader('userId', objCase.Account.PersonEmail);
-                            request.setHeader('customerId', objCase.Account.CIF__pc);
-                            
-                            system.debug('---> request SERVICE CENTER RESULT IS RELEASE LETTER RECEIVED --> '+request.getBody());
-                            HttpResponse response = http.send(request);
-                            
-                            if (response.getStatusCode() != 200)
-                            {
-                                System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                                //CH29: Added isAPIFailed parameter in the method
-                                lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                            }
-                            else
-                            {
-                                System.debug(response.getBody());
-                            }
+                            HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                             
                         }
             /***************************************** SERVICE CENTER RESULT IS RELEASE LETTER RECEIVED END *******************************************************/
@@ -1297,36 +971,15 @@ global class initiateManualOnboarding
                         if(objCase.Type == 'Credit Limit Increase Application' && objCase.bs_Instrument_ID__c != null){
                             system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
                             if(objCase.Resend_DocuSign__c == 'In-App'){
-                                bodyObject.put('signingType','IN_APP');
-                                bodyObject.put('envelopeId',objCase.bs_Instrument_ID__c);
-                                bodyObject.put('crmContactId',objCase.ContactId);
+                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
                             }
                             else if(objCase.Resend_DocuSign__c == 'Email'){
-                                bodyObject.put('signingType','EMAIL');
-                                bodyObject.put('envelopeId',null);
-                                bodyObject.put('crmContactId',null);
+                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
                             }
                         }
                         body = JSON.serialize(bodyObject); 
                         //#CH39 : end
-                        system.debug('---> BODY WHEN SERVICE CENTER RESULT IS RETURN TO SIGNATURE VERIFIER  --> '+body);
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request SERVICE CENTER RESULT IS RETURN TO SIGNATURE VERIFIER --> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        
-                        if (response.getStatusCode() != 200)
-                        {
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
-                        {
-                            System.debug(response.getBody());
-                        }
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                         
                 }
             /****************************************** SERVICE CENTER RESULT IS RETURN TO SIGNATURE VERIFIER END ******************************************/
@@ -1335,40 +988,12 @@ global class initiateManualOnboarding
             
             else if(objCase.Sub_Status__c == 'Discrepancies' && objCase.cc_Credit_Pre_Screening_Result__c == 'Discrepancy in Documents'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","status":"DISCREPANCIES"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'DISCREPANCIES', false, false);
                 }
                 //#CH21#:START
-                      if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                                    '","targetType": "LIMIT_INCREASE","status":"DISCREPANCIES"}';
-                }
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                                    '","targetType": "LIMIT_INCREASE","status":"DISCREPANCIES","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                }
+                      body = CreditCardHandlerAPI.buildLimitIncreaseStatusBody(objCase, 'DISCREPANCIES', false, body);
                 //#CH21#:END
-                system.debug('---> BODY IN DISCREPANCY --> '+body);
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request in DISCREPANACY--> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
-                {
-                    System.debug('Response in DISCREPANACY: '+response.getBody());
-                    System.debug(' CREDIT TEMP QUEUE');
-                    
-                }
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                 
             }
             /******************************************* CREDIT PRE SCREENING RESULT END ************************************************/
@@ -1446,39 +1071,17 @@ global class initiateManualOnboarding
                         if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') && objCase.bs_Instrument_ID__c != null){
                             system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
                             if(objCase.Resend_DocuSign__c == 'In-App'){
-                                bodyObject.put('signingType','IN_APP');
-                                bodyObject.put('envelopeId',objCase.bs_Instrument_ID__c);
-                                bodyObject.put('crmContactId',objCase.ContactId);
+                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
                             }
                             else if(objCase.Resend_DocuSign__c == 'Email'){
-                                bodyObject.put('signingType','EMAIL');
-                                bodyObject.put('envelopeId',null);
-                                bodyObject.put('crmContactId',null);
+                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
                             }
                         }
                         body = JSON.serialize(bodyObject);
                         //#CH39 : End
 
-                        system.debug('---> BODY IN Approved Pending Signature --> '+body);
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        request.setTimeout(120000);//CH40
-                        
-                        system.debug('---> request in CREDIT APPROVAL RESULT--> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        
-                        if (response.getStatusCode() != 200)
-                        {
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
-                        {
-                            System.debug('Response in Referer: '+response.getBody());
-                            System.debug(' CREDIT CARD APPROVAL RESULT');
-                        }
+                        request.setTimeout(120000);
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                     }
             /********************************************* END : CREDIT APPROVER RESULT IS APPROVE/HR RESULT *************************************************/
             
@@ -1490,65 +1093,10 @@ global class initiateManualOnboarding
             else if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card' && objCase.cc_Signature_Verifier_Result__c == 'Accept' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' &&
                     objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_HR_Result__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Decline' &&
                     ((objCase.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01' && objCase.Is_Balance_Transfer__c == false) && objCase.cc_Approved_Requested_Card_Type__c != '')){
-                        Http http1 = new Http();
-                        HttpRequest request1 = new HttpRequest();
-                        //CH14 : replace objCase.Region_Flag__c param with regionName 
-                        //CH19: Start  
-                        request1 = con.createRequest('GET', System.Label.CC_EndPointGetCreditCardsIncludingOtherProducts, regionName);
-                        //CH19: END
-                        
-                        request1.setHeader('userId', objCase.Account.PersonEmail);
-                        request1.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request1 --> '+request1.getBody());
-                        HttpResponse response1 = http1.send(request1);
-                        system.debug('---> Response New 111 --> '+response1.getBody());
-                        
-                        if (response1.getStatusCode() != 200)
+                        HttpResponse response1 = CreditCardHandlerAPI.sendApprovedCardCatalogueRequest(objCase, regionName, lstSA);
+                        if (response1.getStatusCode() == 200)
                         {
-                            System.debug('The status code returned was not expected: ' + response1.getStatusCode() + ' ' + response1.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request1.getBody(),response1.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards?language=en&unit=neo','GET',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response1.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                            
-                        }
-                        else
-                        {
-                            if(!test.isRunningTest()){
-                                System.debug(response1.getBody());
-                                Map<String, Object> m = (Map<String, Object>)JSON.deserializeUntyped(response1.getBody());
-                                System.debug('---> MAP m 222 --> '+m);  // meta, data
-                                System.debug('---> MAP m VALUES 222 --> '+m.Values());
-                                Map<String, Object> m1 = (Map<String, Object>)m.get('data');
-                                System.debug('---> MAP m1 222--> '+m1);  // currentCards,pendingCards,cardOptions
-                                List<Object> m2 = new List<Object>();
-                                if(m1.containsKey('cardOptions') != null)
-                                    m2=(List<Object>)m1.get('cardOptions');
-                                else if(m1.containsKey('pendingCards') != null)
-                                    m2=(List<Object>)m1.get('pendingCards');
-                                
-                                System.debug('---> LIST m2 222--> '+m2);
-                                
-                                List<Map<String, Object>> a = new List<Map<String, Object>> ();
-                                
-                                for(Object obj : m2)
-                                {
-                                    a.add((Map<String, Object>)obj);
-                                    {
-                                        system.debug('---->> OBJ Iterations 222--> '+obj);
-                                    }
-                                }
-                                system.debug('---->> FINALL aaaa 222--> '+a);
-                                
-                                for(Map<String, Object> map1 : a)
-                                {
-                                    if(map1.get('productMappingCode')== objCase.cc_Approved_Requested_Card_Type__c)
-                                    {
-                                        system.debug('---> FINALL 222 --> '+(Integer)map1.get('cardProductConfigurationId'));
-                                        ApprovedCardProductConfigurationId = (Integer)map1.get('cardProductConfigurationId');
-                                        system.debug('---> FINALL cardProductConfigurationId 222--> '+ApprovedCardProductConfigurationId);
-                                    }
-                                }
-                            }
+                            ApprovedCardProductConfigurationId = CreditCardHandlerAPI.findApprovedCardProductConfigurationId(objCase, response1, ApprovedCardProductConfigurationId);
                         }
                         if(objCase.cc_Approved_Requested_Card_Type__c != 'PLATINUM_BALANCE_TRANSFER_01'){
                             if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
@@ -1556,47 +1104,14 @@ global class initiateManualOnboarding
                                 //CH26: Start
                                 //CH28: Start
                                 if(objCase.Approved_Campaign_Name__c != null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
-                                    body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                    '","crmCaseId": "'+objCase.Id +
-                                    '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                    '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                    '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                    '","campaignId": "'+objCase.Approved_Campaign_Name__c +
-                                    '","status":"APPROVED"}';
+                                    body = CreditCardHandlerAPI.buildApprovedCardBody(objCase, ApprovedCardProductConfigurationId);
                                 }
                                 else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c != 'ILA_GULF_AIR_COBRAND_01'){
-                                    body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                    '","crmCaseId": "'+objCase.Id +
-                                    '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                    '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                    '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                    '","campaignId": null,"status":"APPROVED"}';
+                                    body = CreditCardHandlerAPI.buildApprovedCardBody(objCase, ApprovedCardProductConfigurationId);
                                 }
                                 else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Requested_Card_Type__c == 'ILA_GULF_AIR_COBRAND_01'){
                                     //CH35: Start
-                                    if(objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null){
-                                        body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                            '","crmCaseId": "'+objCase.Id +
-                                            '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                            '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                            '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                            '","hasMembership": "'+objCase.Has_Co_Brand_Membership_Number__c +
-                                            '","issuedForSpouse": "'+objCase.Issuing_card_for_a_spouse__c +
-                                            '","spouseCIF": "'+objCase.Spouse_CIF__c +
-                                            '","campaignId": null,"membershipNumber": null,"status":"APPROVED"}';
-                                    }
-                                    else if(objCase.cc_Approved_Embossing_line_4__c != null){
-                                        body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                            '","crmCaseId": "'+objCase.Id +
-                                            '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                            '","hasMembership": "'+objCase.Has_Co_Brand_Membership_Number__c +
-                                            '","membershipNumber": "'+objCase.cc_Approved_Embossing_line_4__c +
-                                            '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                            '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                            '","issuedForSpouse": "'+objCase.Issuing_card_for_a_spouse__c +
-                                            '","spouseCIF": "'+objCase.Spouse_CIF__c +
-                                            '","campaignId": null,"status":"APPROVED"}';
-                                    }
+                                    body = CreditCardHandlerAPI.buildApprovedCoBrandBody(objCase, ApprovedCardProductConfigurationId, body);
                                     //CH35: END
                                 }
                                 //CH28: END
@@ -1604,25 +1119,15 @@ global class initiateManualOnboarding
                                 //CH15: END
                             }
                             
-                            system.debug('---> BODY --> '+body);               
-                            request.setBody(body);
-                            request.setHeader('userId', objCase.Account.PersonEmail);
-                            request.setHeader('customerId', objCase.Account.CIF__pc);
                             request.setTimeout(120000);
-                            
-                            system.debug('---> request --> '+request.getBody());
-                            HttpResponse response = http.send(request);
-                            
+                            HttpResponse response = CreditCardHandlerAPI.sendCardRequest(request, objCase, body);
                             if(response.getStatusCode() != 200 && !test.isRunningTest()) {
-                                
                                 if(objCase.cc_Signature_Verifier_Result__c == 'Accept'){
                                     objCase.cc_Signature_Verifier_Result__c = '';
                                     objCase.cc_Signature_Verification_Date_Time__c = System.now();
                                 }
                                 lstUpdateCase.add(objCase);
-                                System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                                //CH29: Added isAPIFailed parameter in the method
-                                lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
+                                CreditCardHandlerAPI.replaceWithFailureLog(lstSA, request, response, objCase, CreditCardHandlerAPI.LOG_ENDPOINT_CREDIT_CARD_REQUEST, 'PUT', CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                             }
                             else
                             {
@@ -1632,41 +1137,12 @@ global class initiateManualOnboarding
                                 //CH34: END
                                //CH28: Start
                                 if(objCase.cc_Approved_Requested_Card_Type__c == 'ILA_GULF_AIR_COBRAND_01' && objCase.cc_Approved_Requested_Card_Type__c != null && (objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null)){
-                                     Map<String, Object> deserializeResponse = (Map<String, Object>)JSON.deserializeUntyped(response.getBody());// meta, data
-                                     Map<String, Object> dataMap = (Map<String, Object>)deserializeResponse.get('data');
-                                     System.debug('Success Response Signature Verifier:'+dataMap);
-                                     String membershipNumber = String.valueOf(dataMap.get('membershipNumber'));
-                                     objCase.cc_Embossing_Line_4__c = membershipNumber;
-                                     objCase.cc_Approved_Embossing_line_4__c = membershipNumber;
-                                     if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Regular'){
-                                        //CH34: Start
-                                        Case cseToInsert = CreatePremiumInvitationCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     	//CH34: END
-                                        lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                     }
-                                     //CH33: Start
-                                     else if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Premium'){
-                                        //CH34: Start
-                                        Case cseToInsert = CreatePremiumRetentionCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     	//CH34: END
-                                        lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    }
+                                     CreditCardHandlerAPI.applyMembershipNumber(objCase, response);
+                                     CreditCardHandlerAPI.addGulfCrossSellCase(objCase, lstPremiumInvitationCaseToInsert);
                                     //CH33: END 
                                 }
                                 else if(objCase.cc_Approved_Requested_Card_Type__c == 'ILA_GULF_AIR_COBRAND_01' && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Embossing_line_4__c != null){
-                                    if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Regular'){
-                                        //CH34: Start
-                                        Case cseToInsert = CreatePremiumInvitationCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     	//CH34: END
-                                        lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    }
-                                    //CH33: Start
-                                    else if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Premium'){
-                                        //CH34: Start
-                                        Case cseToInsert = CreatePremiumRetentionCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     	//CH34: END
-                                        lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    }
+                                    CreditCardHandlerAPI.addGulfCrossSellCase(objCase, lstPremiumInvitationCaseToInsert);
                                     //CH33: END
                                 }
                                 //CH34: Start
@@ -1682,10 +1158,7 @@ global class initiateManualOnboarding
                                 //CH28: END
                                 //CH08: Start
                                 if(recordtypeName == 'Credit Card'){
-                                    objCase.Status = 'Closed';
-                                    objCase.Sub_Status__c = 'Approved';
-                                    objCase.cc_Application_Stages__c = 'Completed';
-                                    objCase.cc_CRM_Stage__c = 'APPROVED';
+                                    CreditCardHandlerAPI.markApproved(objCase);
                                     objCase.cc_Signature_Verification_Date_Time__c = System.now();
                                     lstUpdateCase.add(objCase);
                                 }
@@ -1717,65 +1190,10 @@ global class initiateManualOnboarding
             else if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Signature_Verifier_Result__c == 'Accept' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' &&
                     objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.Fraud_Results__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Decline')
             {
-                Http http1 = new Http();
-                HttpRequest request1 = new HttpRequest();
-                //CH14 : replace objCase.Region_Flag__c param with regionName 
-                //CH19: Start  
-                request1 = con.createRequest('GET',System.Label.CC_EndPointGetCreditCardsIncludingOtherProducts, regionName);
-                //CH19: END
-                
-                request1.setHeader('userId', objCase.Account.PersonEmail);
-                request1.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request1 --> '+request1.getBody());
-                HttpResponse response1 = http1.send(request1);
-                system.debug('---> Response New 111 --> '+response1.getBody());
-                
-                if (response1.getStatusCode() != 200) 
-                {   
-                    System.debug('The status code returned was not expected: ' + response1.getStatusCode() + ' ' + response1.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request1.getBody(),response1.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards?language=en&unit=neo','GET',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response1.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                    
-                } 
-                else 
+                HttpResponse response1 = CreditCardHandlerAPI.sendApprovedCardCatalogueRequest(objCase, regionName, lstSA);
+                if (response1.getStatusCode() == 200)
                 {
-                    if(!test.isRunningTest()){
-                        System.debug(response1.getBody());      
-                        Map<String, Object> m = (Map<String, Object>)JSON.deserializeUntyped(response1.getBody());
-                        System.debug('---> MAP m 222 --> '+m);  // meta, data
-                        System.debug('---> MAP m VALUES 222 --> '+m.Values());
-                        Map<String, Object> m1 = (Map<String, Object>)m.get('data');
-                        System.debug('---> MAP m1 222--> '+m1);  // currentCards,pendingCards,cardOptions
-                        List<Object> m2 = new List<Object>();
-                        if(m1.containsKey('cardOptions') != null)
-                            m2=(List<Object>)m1.get('cardOptions');
-                        else if(m1.containsKey('pendingCards') != null)
-                            m2=(List<Object>)m1.get('pendingCards'); 
-                        
-                        System.debug('---> LIST m2 222--> '+m2);
-                        
-                        List<Map<String, Object>> a = new List<Map<String, Object>> ();
-                        
-                        for(Object obj : m2)
-                        {
-                            a.add((Map<String, Object>)obj);
-                            {
-                                system.debug('---->> OBJ Iterations 222--> '+obj);
-                            }
-                        }
-                        system.debug('---->> FINALL aaaa 222--> '+a);
-                        
-                        for(Map<String, Object> map1 : a)
-                        {
-                            if(map1.get('productMappingCode')== objCase.cc_Approved_Requested_Card_Type__c)
-                            {
-                                system.debug('---> FINALL 222 --> '+(Integer)map1.get('cardProductConfigurationId'));
-                                ApprovedCardProductConfigurationId = (Integer)map1.get('cardProductConfigurationId');
-                                system.debug('---> FINALL cardProductConfigurationId 222--> '+ApprovedCardProductConfigurationId);
-                            }
-                        }
-                    }
+                    ApprovedCardProductConfigurationId = CreditCardHandlerAPI.findApprovedCardProductConfigurationId(objCase, response1, ApprovedCardProductConfigurationId);
                 }
                  //#CH21:START
                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
@@ -1796,34 +1214,21 @@ global class initiateManualOnboarding
                                 '","targetType": "LIMIT_INCREASE","status":"APPROVED","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'","limitExpiryDate":"'+String.valueOf(System.today())+'"}';
                         }
                 //#CH21:END
-                system.debug('---> BODY --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
+                HttpResponse response = CreditCardHandlerAPI.sendCardRequest(request, objCase, body);
                 if(response.getStatusCode() != 200 && !test.isRunningTest()) {
-                    
                     if(objCase.cc_Signature_Verifier_Result__c == 'Accept'){
                         objCase.cc_Signature_Verifier_Result__c = '';
                         objCase.cc_Signature_Verification_Date_Time__c = System.now();
                     }
                     lstUpdateCase.add(objCase);
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                } 
-                else 
+                    CreditCardHandlerAPI.replaceWithFailureLog(lstSA, request, response, objCase, CreditCardHandlerAPI.LOG_ENDPOINT_CREDIT_CARD_REQUEST, 'PUT', CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                }
+                else
                 {
                     System.debug('finalapproval##'+response.getBody());
                     Map<String,Object> results = (Map<String,Object>)JSON.deserializeUntyped(response.getBody());
                     Map<String,Object> finalresult =(Map<String, Object>)results.get('data');
-                    objCase.Status = 'Closed';
-                    objCase.Sub_Status__c = 'Approved';
-                    objCase.cc_Application_Stages__c = 'Completed';
-                    objCase.cc_CRM_Stage__c = 'APPROVED';
+                    CreditCardHandlerAPI.markApproved(objCase);
                     objCase.cc_Temporary_Limit_Increase_Expiry_Date__c=objCase.cc_Request_Type__c=='temporary'?Date.ValueOf(String.valueOf(finalresult.get('limitExpiryDate'))):null;
                     objCase.cc_Signature_Verification_Date_Time__c = System.now();
                     //CH43: Start
@@ -1856,65 +1261,10 @@ global class initiateManualOnboarding
                     (((objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' || objCase.Is_Balance_Transfer__c == true) && objCase.cc_Approved_Transfer_Type__c == 'Balance Transfer') ||
                      ((objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' || objCase.Is_Balance_Transfer__c == true) && objCase.cc_Approved_Transfer_Type__c == 'Buy Out'))){
                          
-                         Http http1 = new Http();
-                         HttpRequest request1 = new HttpRequest();
-                         //CH14 : replace objCase.Region_Flag__c param with regionName 
-                         //CH19: Start  
-                         request1 = con.createRequest('GET', System.Label.CC_EndPointGetCreditCardsIncludingOtherProducts, regionName);
-                         //CH19: END
-                         
-                         request1.setHeader('userId', objCase.Account.PersonEmail);
-                         request1.setHeader('customerId', objCase.Account.CIF__pc);
-                         
-                         system.debug('---> request1 --> '+request1.getBody());
-                         HttpResponse response1 = http1.send(request1);
-                         system.debug('---> Response New 111 --> '+response1.getBody());
-                         
-                         if (response1.getStatusCode() != 200)
+                         HttpResponse response1 = CreditCardHandlerAPI.sendApprovedCardCatalogueRequest(objCase, regionName, lstSA);
+                         if (response1.getStatusCode() == 200)
                          {
-                             System.debug('The status code returned was not expected: ' + response1.getStatusCode() + ' ' + response1.getStatus());
-                             //CH29: Added isAPIFailed parameter in the method
-                             lstSA = createSystemAction(request1.getBody(),response1.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards?language=en&unit=neo','GET',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response1.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                             
-                         }
-                         else
-                         {
-                             if(!test.isRunningTest()){
-                                 System.debug(response1.getBody());
-                                 Map<String, Object> m = (Map<String, Object>)JSON.deserializeUntyped(response1.getBody());
-                                 System.debug('---> MAP m 222 --> '+m);  // meta, data
-                                 System.debug('---> MAP m VALUES 222 --> '+m.Values());
-                                 Map<String, Object> m1 = (Map<String, Object>)m.get('data');
-                                 System.debug('---> MAP m1 222--> '+m1);  // currentCards,pendingCards,cardOptions
-                                 List<Object> m2 = new List<Object>();
-                                 if(m1.containsKey('cardOptions') != null)
-                                     m2=(List<Object>)m1.get('cardOptions');
-                                 else if(m1.containsKey('pendingCards') != null)
-                                     m2=(List<Object>)m1.get('pendingCards');
-                                 
-                                 System.debug('---> LIST m2 222--> '+m2);
-                                 
-                                 List<Map<String, Object>> a = new List<Map<String, Object>> ();
-                                 
-                                 for(Object obj : m2)
-                                 {
-                                     a.add((Map<String, Object>)obj);
-                                     {
-                                         system.debug('---->> OBJ Iterations 222--> '+obj);
-                                     }
-                                 }
-                                 system.debug('---->> FINALL aaaa 222--> '+a);
-                                 
-                                 for(Map<String, Object> map1 : a)
-                                 {
-                                     if(map1.get('productMappingCode')== objCase.cc_Approved_Requested_Card_Type__c)
-                                     {
-                                         system.debug('---> FINALL 222 --> '+(Integer)map1.get('cardProductConfigurationId'));
-                                         ApprovedCardProductConfigurationId = (Integer)map1.get('cardProductConfigurationId');
-                                         system.debug('---> FINALL cardProductConfigurationId 222--> '+ApprovedCardProductConfigurationId);
-                                     }
-                                 }
-                             }
+                             ApprovedCardProductConfigurationId = CreditCardHandlerAPI.findApprovedCardProductConfigurationId(objCase, response1, ApprovedCardProductConfigurationId);
                              //CH28: Added Is_Balance_Transfer__c in if condition for Cobranded Cards
                              if((objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01' || objCase.Is_Balance_Transfer__c == true) && objCase.cc_Approved_Transfer_Type__c == 'Balance Transfer'){
                                  if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
@@ -1922,47 +1272,14 @@ global class initiateManualOnboarding
                                      //CH26: Start
                                      //CH28: Start
                                      if(objCase.Approved_Campaign_Name__c != null && objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01'){
-                                         body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                         '","crmCaseId": "'+objCase.Id +
-                                         '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                         '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                         '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                         '","campaignId": "'+objCase.Approved_Campaign_Name__c +
-                                         '","status":"APPROVED"}';
+                                         body = CreditCardHandlerAPI.buildApprovedCardBody(objCase, ApprovedCardProductConfigurationId);
                                      }
                                      else if(objCase.Approved_Campaign_Name__c == null && objCase.cc_Approved_Requested_Card_Type__c == 'PLATINUM_BALANCE_TRANSFER_01'){
-                                         body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                         '","crmCaseId": "'+objCase.Id +
-                                         '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                         '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                         '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                         '","campaignId": null,"status":"APPROVED"}';
+                                         body = CreditCardHandlerAPI.buildApprovedCardBody(objCase, ApprovedCardProductConfigurationId);
                                      }
                                      else if(objCase.Approved_Campaign_Name__c == null && objCase.Is_Balance_Transfer__c == true){
                                         //CH35: Start 
-                                        if(objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null){ 
-                                             body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                                 '","crmCaseId": "'+objCase.Id +
-                                                 '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                                 '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                                 '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                                 '","hasMembership": "'+objCase.Has_Co_Brand_Membership_Number__c +
-                                                 '","issuedForSpouse": "'+objCase.Issuing_card_for_a_spouse__c +
-                                                 '","spouseCIF": "'+objCase.Spouse_CIF__c +
-                                                 '","campaignId": null,"membershipNumber": null,"status":"APPROVED"}';
-                                         }
-                                         else if(objCase.cc_Approved_Embossing_line_4__c != null){
-                                             body = '{"cardProductConfigurationId": "'+ApprovedCardProductConfigurationId +
-                                                 '","crmCaseId": "'+objCase.Id +
-                                                 '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
-                                                 '","hasMembership": "'+objCase.Has_Co_Brand_Membership_Number__c +
-                                                 '","membershipNumber": "'+objCase.cc_Approved_Embossing_line_4__c +
-                                                 '","balanceTransferAmount": "'+objCase.cc_Approved_Balance_Transfer_Amount__c +
-                                                 '","embossName": "'+objCase.cc_Approved_Name_on_the_card__c +
-                                                 '","issuedForSpouse": "'+objCase.Issuing_card_for_a_spouse__c +
-                                                 '","spouseCIF": "'+objCase.Spouse_CIF__c +
-                                                 '","campaignId": null,"status":"APPROVED"}';
-                                         }
+                                        body = CreditCardHandlerAPI.buildApprovedCoBrandBody(objCase, ApprovedCardProductConfigurationId, body);
                                          //CH35: END
                                      }
                                      //CH28: END
@@ -1970,61 +1287,20 @@ global class initiateManualOnboarding
                                      //CH15: END
                                  }
                                 
-                                 system.debug('---> BODY IN ILA SWITCH-BALANCE TRANSFER --> '+body);               
-                                 request.setBody(body);
-                                 request.setHeader('userId', objCase.Account.PersonEmail);
-                                 request.setHeader('customerId', objCase.Account.CIF__pc);
-                                 
-                                 system.debug('---> request in ILA SWITCH-BALANCE TRANSFER --> '+request.getBody());
-                                 HttpResponse response = http.send(request);
-                                 if (response.getStatusCode() != 200)
-                                 {
-                                     System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                                     //CH29: Added isAPIFailed parameter in the method
-                                     lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                                 }
-                                 else
+                                 HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                                 if (response.getStatusCode() == 200)
                                  {
                                      System.debug('Response in ILA SWITCH-BALANCE TRANSFER : '+response.getBody());
                                      System.debug(' SIGNATURE VERIFICATION ACCEPT FOR ILA SWITCH-BALANCE TRANSFER');
                                      //CH28: Start
                                      if(objCase.Is_Balance_Transfer__c == true && (objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null)){
-                                         Map<String, Object> deserializeResponse = (Map<String, Object>)JSON.deserializeUntyped(response.getBody());// meta, data
-                                         Map<String, Object> dataMap = (Map<String, Object>)deserializeResponse.get('data');
-                                         System.debug('Success Response at Signature Verifier for Balance Transfer:'+dataMap);
-                                         String membershipNumber = String.valueOf(dataMap.get('membershipNumber'));
-                                         objCase.cc_Embossing_Line_4__c = membershipNumber;
-                                         objCase.cc_Approved_Embossing_line_4__c = membershipNumber;
-                                         if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Regular'){
-                                             //CH34: Start
-                                             Case cseToInsert = CreatePremiumInvitationCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                             //CH34: END
-                                             lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                         }
-                                        //CH33: Start
-                                     	else if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Premium'){
-                                        	//CH34: Start
-                                            Case cseToInsert = CreatePremiumRetentionCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     		//CH34: END
-                                            lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    	}
+                                         CreditCardHandlerAPI.applyMembershipNumber(objCase, response);
+                                         CreditCardHandlerAPI.addGulfCrossSellCase(objCase, lstPremiumInvitationCaseToInsert);
                                     	//CH33: END 
                                          
                                      }
                                      else if(objCase.Is_Balance_Transfer__c == true && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Embossing_line_4__c != null){
-                                         if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Regular'){
-                                             //CH34: Start
-                                             Case cseToInsert = CreatePremiumInvitationCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                             //CH34: END
-                                             lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                         }
-                                        //CH33: Start
-                                     	else if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Premium'){
-                                        	//CH34: Start
-                                            Case cseToInsert = CreatePremiumRetentionCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     		//CH34: END
-                                            lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    	}
+                                         CreditCardHandlerAPI.addGulfCrossSellCase(objCase, lstPremiumInvitationCaseToInsert);
                                     	//CH33: END 
                                 	 }
                                      //CH28: END
@@ -2056,60 +1332,19 @@ global class initiateManualOnboarding
                                          '","status":"APPROVED_PENDING_BT_PROCESSING"}';
                                  }
                                  
-                                 system.debug('---> BODY IN ILA SWITCH-BUY OUT --> '+body);               
-                                 request.setBody(body);
-                                 request.setHeader('userId', objCase.Account.PersonEmail);
-                                 request.setHeader('customerId', objCase.Account.CIF__pc);
-                                 
-                                 system.debug('---> request in ILA SWITCH-BUY OUT--> '+request.getBody());
-                                 HttpResponse response = http.send(request);
-                                 if (response.getStatusCode() != 200)
-                                 {
-                                     System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                                     //CH29: Added isAPIFailed parameter in the method
-                                     lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                                 }
-                                 else
+                                 HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                                 if (response.getStatusCode() == 200)
                                  {
                                      System.debug('Response in ILA SWITCH-BUY OUT : '+response.getBody());
                                      System.debug(' SIGNATURE VERIFICATION ACCEPT FOR ILA SWITCH-BUY OUT');
                                      //CH28: Start
                                      if(objCase.Is_Balance_Transfer__c == true && (objCase.cc_Approved_Embossing_line_4__c == '' || objCase.cc_Approved_Embossing_line_4__c == null)){
-                                         Map<String, Object> deserializeResponse = (Map<String, Object>)JSON.deserializeUntyped(response.getBody());// meta, data
-                                         Map<String, Object> dataMap = (Map<String, Object>)deserializeResponse.get('data');
-                                         System.debug('Success Response at Signature Verifier for Balance Transfer:'+dataMap);
-                                         String membershipNumber = String.valueOf(dataMap.get('membershipNumber'));
-                                         objCase.cc_Embossing_Line_4__c = membershipNumber;
-                                         objCase.cc_Approved_Embossing_line_4__c = membershipNumber;
-                                         if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Regular'){
-                                             //CH34: Start
-                                             Case cseToInsert = CreatePremiumInvitationCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                             //CH34: END
-                                             lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                         }
-                                        //CH33: Start
-                                     	else if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Premium'){
-                                        	//CH34: Start
-                                            Case cseToInsert = CreatePremiumRetentionCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     		//CH34: END
-                                            lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    	}
+                                         CreditCardHandlerAPI.applyMembershipNumber(objCase, response);
+                                         CreditCardHandlerAPI.addGulfCrossSellCase(objCase, lstPremiumInvitationCaseToInsert);
                                     	//CH33: END 
                                       }
                                       else if(objCase.Is_Balance_Transfer__c == true && objCase.cc_Approved_Requested_Card_Type__c != null && objCase.cc_Approved_Embossing_line_4__c != null){
-                                         if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Regular'){
-                                             //CH34: Start
-                                             Case cseToInsert = CreatePremiumInvitationCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                             //CH34: END
-                                             lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                         }
-                                        //CH33: Start
-                                     	else if(System.Label.ENABLE_CROSS_SELLING_GULF.equalsIgnoreCase('true') && objCase.Customer_Segment__c == 'Premium'){
-                                        	//CH34: Start
-                                            Case cseToInsert = CreatePremiumRetentionCase.createPremiumCase(objCase.Account,objCase.cc_Approved_Requested_Card_Type__c,objCase.cc_Approved_Name_on_the_card__c);
-                                     		//CH34: END
-                                            lstPremiumInvitationCaseToInsert.add(cseToInsert);
-                                    	}
+                                         CreditCardHandlerAPI.addGulfCrossSellCase(objCase, lstPremiumInvitationCaseToInsert);
                                     	//CH33: END 
                                       }
                                       
@@ -2146,16 +1381,12 @@ global class initiateManualOnboarding
                         if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application') && objCase.bs_Instrument_ID__c != null){
                             system.debug('---> envelopeId  --> '+objCase.bs_Instrument_ID__c);
                             if(objCase.cc_Signature_Verifier_Result__c == 'Re-Send In-App'){
-                                bodyObject.put('signingType','IN_APP');
-                                bodyObject.put('envelopeId',objCase.bs_Instrument_ID__c);
-                                bodyObject.put('crmContactId',objCase.ContactId);
+                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, true);
                                 objCase.Resend_DocuSign__c = 'In-App';
                                 lstUpdateCase.add(objCase);
                             }
                             else if(objCase.cc_Signature_Verifier_Result__c == 'Re-Send'){
-                                bodyObject.put('signingType','EMAIL');
-                                bodyObject.put('envelopeId',null);
-                                bodyObject.put('crmContactId',null);
+                                CreditCardHandlerAPI.addSigningInfo(bodyObject, objCase, false);
                                 objCase.Resend_DocuSign__c = 'Email';
                                 lstUpdateCase.add(objCase);
                             }
@@ -2163,26 +1394,7 @@ global class initiateManualOnboarding
                         body = JSON.serialize(bodyObject);
                         //#CH39 : End
 
-                        system.debug('---> BODY IN RESEND Approved Pending Signature FOR SIGNATURE VERIFICATION --> '+body);
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request in Approved Pending Signature FOR SIGNATURE VERIFICATION --> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        
-                        if (response.getStatusCode() != 200)
-                        {
-                            
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
-                        {
-                            System.debug('Response in Approved Pending Signature FOR SIGNATURE VERIFICATION : '+response.getBody());
-                            System.debug(' SIGNATURE VERIFICATION RE_SEND');
-                        }
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                     }
             /**************************************** END : SIGNATURE VERIFIER RESULT IS RE-SEND ****************************************/
             
@@ -2193,38 +1405,12 @@ global class initiateManualOnboarding
             else if(objCase.cc_Signature_Verifier_Result__c == 'Refer to Service Center' && objCase.cc_Credit_Approval_Result__c != 'Decline' && objCase.cc_Credit_Evaluation_Result__c != 'Decline' &&
                     objCase.cc_Credit_Verification_Result__c != 'Decline' && objCase.cc_Credit_Pre_Screening_Result__c != 'Decline' && objCase.cc_Business_Approval_Result__c != 'Decline' && objCase.cc_CEO_Result__c != 'Decline' && objCase.Fraud_Results__c != 'Decline' && objCase.cc_Signature_Verifier_Result__c != 'Decline'){
                         if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                                '","status":"REFERRED_BY_SIGNATURE_VERIFIER"}';
+                            body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'REFERRED_BY_SIGNATURE_VERIFIER', false, false);
                         }
                         //#CH21:START
-                        if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                                '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_SIGNATURE_VERIFIER"}';
-                        }
-                          if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
-                            body = '{"crmCaseId": "'+objCase.Id +
-                                '","targetType": "LIMIT_INCREASE","status":"REFERRED_BY_SIGNATURE_VERIFIER","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                        }
+                        body = CreditCardHandlerAPI.buildLimitIncreaseStatusBody(objCase, 'REFERRED_BY_SIGNATURE_VERIFIER', false, body);
                         //#CH21:END
-                        system.debug('---> BODY IN SIGNATURE VERIFIER IF REFER TO SERVICE CENTER --> '+body);
-                        request.setBody(body);
-                        request.setHeader('userId', objCase.Account.PersonEmail);
-                        request.setHeader('customerId', objCase.Account.CIF__pc);
-                        
-                        system.debug('---> request in SIGNATURE VERIFIER IF REFER TO SERVICE CENTER ---> '+request.getBody());
-                        HttpResponse response = http.send(request);
-                        
-                        if (response.getStatusCode() != 200)
-                        {
-                            System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                            //CH29: Added isAPIFailed parameter in the method
-                            lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                        }
-                        else
-                        {
-                            System.debug('Response in SIGNATURE VERIFIER IF REFER TO SERVICE CENTER - : '+response.getBody());
-                            System.debug(' SIGNATURE VERIFICATION REFER TO SERVICE CENTER');
-                        }
+                        HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                     }
             /******************************* END : SIGNATURE VERIFIER RESULT IS  REFER TO SERVICE CENTER  ****************************************/
             
@@ -2243,25 +1429,7 @@ global class initiateManualOnboarding
                                  '","status":"APPROVED_PENDING_BT_LETTER"}';
                          }
                         
-                         system.debug('---> BODY IN BUYOUT OPERATION FOR BUY OUT TYPE --> '+body);               
-                         request.setBody(body);
-                         request.setHeader('userId', objCase.Account.PersonEmail);
-                         request.setHeader('customerId', objCase.Account.CIF__pc);
-                         
-                         system.debug('---> request in BUYOUT OPERATION  FOR BUY OUT TYPE ---> '+request.getBody());
-                         HttpResponse response = http.send(request);
-                         
-                         if (response.getStatusCode() != 200)
-                         {
-                             System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                             //CH29: Added isAPIFailed parameter in the method
-                             lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                         }
-                         else
-                         {
-                             System.debug('Response in BUYOUT OPERATION  FOR BUY OUT TYPE - : '+response.getBody());
-                             System.debug(' BUYOUT OPERATION REFER TO SERVICE CENTER');
-                         }
+                         HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                      }
             
             /************************** END : BUYOUT OPERATION RESULT IS BALANCE TRANSFER AND TRANSFER TYPE IS BUYOUT *****************************************/
@@ -2276,44 +1444,20 @@ global class initiateManualOnboarding
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
                     //CH15: Start
                     //CH26: Start
-                    if(objCase.Approved_Campaign_Name__c != null){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                        '","campaignId": "'+objCase.Approved_Campaign_Name__c +
-                        '","status":"APPROVED"}';
-                    }
-                    else if(objCase.Approved_Campaign_Name__c == null){
-                         body = '{"crmCaseId": "'+objCase.Id +
-                        '","campaignId": null,"status":"APPROVED"}';
-                    }
+                    body = CreditCardHandlerAPI.buildCampaignBody(objCase, objCase.Approved_Campaign_Name__c, 'APPROVED', false);
                    //CH26: END
                     //CH15: END
                 }
                 
-                system.debug('---> BODY IN EVALUATION RESULT ACCEPT RELEASE LETTER --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request in evaluation result accept release letter ---> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                if (response.getStatusCode() == 200)
                 {
                     System.debug('Response in Evaluation result accept release letter - : '+response.getBody());
                     System.debug('Evaluation Result Accept Release Letter');
-                    objCase.Status = 'Closed';
-                    objCase.Sub_Status__c = 'Approved';
+                    CreditCardHandlerAPI.markApproved(objCase);
                     if(objCase.cc_Credit_Evaluation_Result__c == 'Accept Release Letter'){
                         objCase.cc_Credit_Evaluation_Result_Date_Time__c = system.now();
                     }
-                    objCase.cc_CRM_Stage__c = 'APPROVED';
-                    objCase.cc_Application_Stages__c = 'Completed';
                     lstUpdateCase.add(objCase);
                 }
             }
@@ -2327,35 +1471,21 @@ global class initiateManualOnboarding
             /************************************** START : HR APPROVAL RESULT ACCEPT RELEASE LETTER *************************************************************/
             else if(objCase.cc_HR_Result__c == 'Accept Release Letter'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","status":"APPROVED"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'APPROVED', false, false);
                 }
                
-                system.debug('---> BODY WHEN HR RESULT IS ACCEPT RELEASE LETTER  --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request WHEN HR RESULT IS ACCEPT RELEASE LETTER --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                 if (response.getStatusCode() != 200)
                 {
                     if(objCase.cc_HR_Result__c == 'Accept Release Letter'){
                         objCase.cc_HR_Result__c = '';
                     }
                     lstUpdateCase.add(objCase);
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
                 }
                 else
                 {
                     System.debug(response.getBody());
-                    objCase.Status = 'Closed';
-                    objCase.Sub_Status__c = 'Approved';
-                    objCase.cc_Application_Stages__c = 'Completed';
-                    objCase.cc_CRM_Stage__c = 'APPROVED';
+                    CreditCardHandlerAPI.markApproved(objCase);
                     lstUpdateCase.add(objCase);
                 }
                 
@@ -2384,17 +1514,13 @@ global class initiateManualOnboarding
                     /////////////////////////////////////////// Start Staff - HR Signature Verifier Decline /////////////////////////////////////////
                     //CH28: Start - Remove "targetType": "LIMIT_INCREASE"
                    else if(objCase.cc_HR_Result__c == 'Approved' && objCase.cc_Signature_Verifier_Result__c == 'Decline'){
-                         body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","status":"DECLINED"}';
+                         body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'DECLINED', true, false);
                     }
                    //CH28: END
                    /////////////////////////////////////////// END Staff - HR Signature Verifier Decline ///////////////////////////////////////////
                    //CH24: END
                    else if(objCase.cc_HR_Result__c == 'Decline'){
-                        body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","status":"DECLINED"}';
+                        body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'DECLINED', true, false);
                    }
                     //CH24: END
                 }
@@ -2418,48 +1544,27 @@ global class initiateManualOnboarding
                     //CH24: Start
                     /////////////////////////////////////////// Start Staff - HR Signature Verifier Decline /////////////////////////////////////////
                     else if(objCase.cc_HR_Result__c == 'Approved' && objCase.cc_Signature_Verifier_Result__c == 'Decline'){
-                         body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","targetType": "LIMIT_INCREASE","status":"DECLINED"}';
+                         body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'DECLINED', true, false);
                     }
                    /////////////////////////////////////////// END Staff - HR Signature Verifier Decline ///////////////////////////////////////////
                    //CH24: END
                     
                     else if(objCase.cc_HR_Result__c == 'Decline'){
-                         body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","targetType": "LIMIT_INCREASE","status":"DECLINED"}';
+                         body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'DECLINED', true, false);
                     }
                     //CH24: END
                 }
                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='temporary'){
                     //CH12: Start
-                    body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","targetType": "LIMIT_INCREASE","status":"DECLINED","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'LIMIT_INCREASE', 'DECLINED', true, true);
                     //CH12: END
                 }
                 //#CH21:END
                 if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                        '","targetType": "SUPPLEMENTARY_CARD","status":"DECLINED"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'DECLINED', true, false);
                 }
-                system.debug('---> BODY IN DECLINE --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request in DECLINE --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                if (response.getStatusCode() == 200)
                 {
                     System.debug(response.getBody());
                     objCase.Status = 'Closed';
@@ -2471,110 +1576,37 @@ global class initiateManualOnboarding
                     //CH37: END
                     
                     if(objCase.cc_CEO_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_CEO_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit CEO';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_CEO_Result_Date_Time__c, 'Credit CEO', accListToUpdateRestrictCreditCard);
                     }
                     if(objCase.cc_Credit_Approval_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_Credit_Approval_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Approval';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_Credit_Approval_Result_Date_Time__c, 'Credit Approval', accListToUpdateRestrictCreditCard);
                     }
                     if(objCase.cc_HR_Result__c == 'Decline')
                         objCase.cc_HR_Result_Date_Time__c = system.now();
                     if(objCase.cc_Business_Approval_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_Business_Approval_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Business Team';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_Business_Approval_Result_Date_Time__c, 'Credit Business Team', accListToUpdateRestrictCreditCard);
                     }
                    
                     if(objCase.cc_Credit_Evaluation_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_Credit_Evaluation_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Evaluation';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_Credit_Evaluation_Result_Date_Time__c, 'Credit Evaluation', accListToUpdateRestrictCreditCard);
                     }
                     if(objCase.cc_Credit_Verification_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_Credit_Verification_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Verification';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_Credit_Verification_Result_Date_Time__c, 'Credit Verification', accListToUpdateRestrictCreditCard);
                     }
                     if(objCase.cc_Credit_Pre_Screening_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_Credit_Pre_Screening_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Pre-Screening';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_Credit_Pre_Screening_Result_Date_Time__c, 'Credit Pre-Screening', accListToUpdateRestrictCreditCard);
                     }
                     if(objCase.cc_Maker__c == 'Decline'){
-                        objCase.cc_Maker_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Maker';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Maker_Result_Date_Time__c, 'Credit Maker');
                     }
                     //CH23:Start
                     if(objCase.Fraud_Results__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.Fraud_Results_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Fraud Team';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.Fraud_Results_Date_Time__c, 'Credit Fraud Team', accListToUpdateRestrictCreditCard);
                     }
                     //CH23: END
                     //CH25: Start
                     if(objCase.cc_Signature_Verifier_Result__c == 'Decline'){
-                        //CH31: Start
-                        //CH38: Start
-                        if((objCase.Type == 'Credit Card Application' || objCase.Type == 'Credit Limit Increase Application')){
-                            Account acc = restrictAccountToApplyCard(objCase,objCase.AccountId);
-                            accListToUpdateRestrictCreditCard.add(acc);
-                        }
-                        //CH38: END
-                        //CH31: END
-                        objCase.cc_Signature_Verification_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Signature Verification';
+                        CreditCardHandlerAPI.applyDeclineStage(objCase, Case.cc_Signature_Verification_Date_Time__c, 'Credit Signature Verification', accListToUpdateRestrictCreditCard);
                     }
                     //CH25: END
                     
@@ -2586,40 +1618,16 @@ global class initiateManualOnboarding
             else if(objCase.cc_Credit_Approval_Result__c == 'Cancelled by Customer' || objCase.cc_HR_Result__c == 'Cancelled by Customer' || objCase.cc_Credit_Evaluation_Result__c == 'Cancelled by Customer' || objCase.cc_Credit_Verification_Result__c == 'Cancelled by Customer' || objCase.cc_Credit_Pre_Screening_Result__c == 'Cancelled by Customer' || objCase.cc_Maker__c == 'Cancelled by Customer' || objCase.Fraud_Results__c == 'Cancelled by Customer' || objCase.cc_Signature_Verifier_Result__c == 'Cancelled by Customer'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
                     //CH12: Start
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                        '","status":"CANCELLED"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'CANCELLED', true, false);
                     //CH12: END
                 }
                 //#CH21:START
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                    //CH12: Start
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                        '","targetType": "LIMIT_INCREASE","status":"CANCELLED"}';
-                    //CH12: END
-                }
-                 if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase'&& objCase.cc_Request_Type__c=='temporary'){
-                    //CH12: Start
-                    body = '{"crmCaseId": "'+objCase.Id +
-                            '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                            '","targetType": "LIMIT_INCREASE","status":"CANCELLED","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                    //CH12: END
-                }
+                body = CreditCardHandlerAPI.buildLimitIncreaseStatusBody(objCase, 'CANCELLED', true, body);
                   //#CH21:END
                 if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
-                        '","targetType": "SUPPLEMENTARY_CARD","status":"CANCELLED"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'CANCELLED', true, false);
                 }
-                system.debug('---> BODY IN CANCELLED --> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request in CANCEL --> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
                 if (response.getStatusCode() != 200)
                 {
                     if(objCase.cc_Credit_Approval_Result__c == 'Cancelled by Customer')
@@ -2643,10 +1651,6 @@ global class initiateManualOnboarding
                        objCase.cc_Signature_Verifier_Result__c = '';
                     }
                     //CH25: END
-                    
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
                 }
                 else
                 {
@@ -2659,39 +1663,31 @@ global class initiateManualOnboarding
                     //CH37: END
                     
                     if(objCase.cc_Credit_Approval_Result__c == 'Cancelled by Customer'){
-                        objCase.cc_Credit_Approval_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Approval';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Credit_Approval_Result_Date_Time__c, 'Credit Approval');
                     }
                     if(objCase.cc_HR_Result__c == 'Cancelled by Customer'){
-                        objCase.cc_HR_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit HR Team';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_HR_Result_Date_Time__c, 'Credit HR Team');
                     }
                     if(objCase.cc_Credit_Evaluation_Result__c == 'Cancelled by Customer'){
-                        objCase.cc_Credit_Evaluation_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Evaluation';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Credit_Evaluation_Result_Date_Time__c, 'Credit Evaluation');
                     }
                     if(objCase.cc_Credit_Verification_Result__c == 'Cancelled by Customer'){
-                        objCase.cc_Credit_Verification_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Verification';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Credit_Verification_Result_Date_Time__c, 'Credit Verification');
                     }
                     if(objCase.cc_Credit_Pre_Screening_Result__c == 'Cancelled by Customer'){
-                        objCase.cc_Credit_Pre_Screening_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Pre-Screening';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Credit_Pre_Screening_Result_Date_Time__c, 'Credit Pre-Screening');
                     }
                     if(objCase.cc_Maker__c == 'Cancelled by Customer'){
-                        objCase.cc_Maker_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Maker';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Maker_Result_Date_Time__c, 'Credit Maker');
                     }
                     //CH23:Start
                     if(objCase.Fraud_Results__c == 'Cancelled by Customer'){
-                        objCase.Fraud_Results_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Fraud Team';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.Fraud_Results_Date_Time__c, 'Credit Fraud Team');
                     }
                     //CH23: END
                     //CH25: Start
                     if(objCase.cc_Signature_Verifier_Result__c == 'Cancelled by Customer'){
-                        objCase.cc_Signature_Verification_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Signature Verification';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Signature_Verification_Date_Time__c, 'Credit Signature Verification');
                     }
                     //CH25: END
                     //CH27: Start
@@ -2707,46 +1703,23 @@ global class initiateManualOnboarding
             }
             else if(objCase.cc_Credit_Pre_Screening_Result__c == 'Expired' || objCase.Sub_Status__c == 'Expired'){
                 if(objCase.Type == 'Credit Card Application' && objCase.Sub_Type__c == 'New Credit Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","status":"EXPIRED"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, null, 'EXPIRED', false, false);
                 }
                 //CH21#:START
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase' && objCase.cc_Request_Type__c=='permanent'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","targetType": "LIMIT_INCREASE","status":"EXPIRED"}';
-                }
-                if(objCase.Type == 'Credit Limit Increase Application' && objCase.Sub_Type__c == 'Credit Limit Increase'&& objCase.cc_Request_Type__c=='temporary'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                                '","targetType": "LIMIT_INCREASE","status":"EXPIRED","requestType":"temporary","duration":"'+objCase.cc_Temporary_Limit_Increase_Duration__c+'"}';
-                }
+                body = CreditCardHandlerAPI.buildLimitIncreaseStatusBody(objCase, 'EXPIRED', false, body);
                 //CH21#:END
                 if(objCase.Type == 'Credit Card Supplementary Application' && objCase.Sub_Type__c == 'New Supplementary Card'){
-                    body = '{"crmCaseId": "'+objCase.Id +
-                        '","targetType": "SUPPLEMENTARY_CARD","status":"EXPIRED"}';
+                    body = CreditCardHandlerAPI.buildStatusBody(objCase, 'SUPPLEMENTARY_CARD', 'EXPIRED', false, false);
                 }
-                system.debug('---> BODY IN EXPIRE--> '+body);               
-                request.setBody(body);
-                request.setHeader('userId', objCase.Account.PersonEmail);
-                request.setHeader('customerId', objCase.Account.CIF__pc);
-                
-                system.debug('---> request IN EXPIRE--> '+request.getBody());
-                HttpResponse response = http.send(request);
-                
-                if (response.getStatusCode() != 200)
-                {
-                    System.debug('The status code returned was not expected: ' + response.getStatusCode() + ' ' + response.getStatus());
-                    //CH29: Added isAPIFailed parameter in the method
-                    lstSA = createSystemAction(request.getBody(),response.getBody(),'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo','PUT',objCase.id,objCase.Customer_CIF__c,objCase.accountId,response.getStatusCode(), 'Credit Card Application', 'Credit Card',true);
-                }
-                else
+                HttpResponse response = CreditCardHandlerAPI.sendAndLogCardRequest(request, objCase, body, lstSA, CreditCardHandlerAPI.ACTION_CREDIT_CARD_APPLICATION);
+                if (response.getStatusCode() == 200)
                 {
                     System.debug(response.getBody());
                     objCase.Status = 'Closed';
                     objCase.Sub_Status__c = 'Expired';
                     objCase.cc_CRM_Stage__c = 'EXPIRED';
                     if(objcase.cc_Credit_Pre_Screening_Result__c == 'Expired'){
-                        objCase.cc_Credit_Pre_Screening_Result_Date_Time__c = system.now();
-                        objCase.cc_Application_Stages__c = 'Credit Pre-Screening';
+                        CreditCardHandlerAPI.applyResultStage(objCase, Case.cc_Credit_Pre_Screening_Result_Date_Time__c, 'Credit Pre-Screening');
                     }
                     lstUpdateCase.add(objCase);
                 }
