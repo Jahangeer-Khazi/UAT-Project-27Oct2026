@@ -391,7 +391,7 @@ public without sharing class SM05_CreditCardApiHandler {
                   requestObject.put('creditLimit',String.valueOf(approvedCreditLimit));
                   //CH06: Start
                     if(objcase.Resend_DocuSign__c == 'Digital Signature'){
-                        requestObject.put('signingType','DigitalSignature');
+                        requestObject.put('signingType','Digital Signature');
                         // Signature Verifier Re-Send restarts the Digital Signature
                         if(currentChangedField == 'cc_Signature_Verifier_Result__c' && objcase.cc_Signature_Verifier_Result__c == 'Re-Send'){
                             requestObject.put('signingStatus','started');

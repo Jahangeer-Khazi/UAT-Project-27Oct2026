@@ -953,7 +953,7 @@ global class CreditCardCashCollateral {
                                     '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
                                     '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
                                     '","targetType": "CREDIT_CARD_ORDER","status":"APPROVED_PENDING_SIGNATURE"' +
-                                    ',"signingType":"DigitalSignature","signingStatus":""}';
+                                    ',"signingType":"Digital Signature","signingStatus":""}';
                             }
                             //CH32: END
                         }
@@ -1003,7 +1003,7 @@ global class CreditCardCashCollateral {
                                 '","cardProductConfigurationId": "'+objCase.PrimaryCardProductConfigurationId__c +
                                 '","creditLimit": "'+objCase.cc_Approved_Credit_Limit__c +
                                 '","targetType": "LIMIT_INCREASE","status":"APPROVED_PENDING_SIGNATURE","cardNature":"secured"' +
-                                ',"signingType":"DigitalSignature","signingStatus":""}';
+                                ',"signingType":"Digital Signature","signingStatus":""}';
                             }
                         }
                         system.debug('---> BODY IN APPROVED PENDING SIGNATURE IN CASH COLLATERAL JORDAN --> '+body);               
@@ -1649,7 +1649,7 @@ objCase.cc_HR_Result_Date_Time__c = system.now();
                             bodyObject.put('status','APPROVED_PENDING_SIGNATURE');
                             //CH32: Start
                             if(objCase.Resend_DocuSign__c == 'Digital Signature'){
-                                bodyObject.put('signingType','DigitalSignature');
+                                bodyObject.put('signingType','Digital Signature');
                                 bodyObject.put('signingStatus','started');
                             }
                             //CH32: END
@@ -1667,7 +1667,7 @@ objCase.cc_HR_Result_Date_Time__c = system.now();
                             bodyObject.put('cardNature','secured');
                             //CH32: Start
                             if(objCase.Resend_DocuSign__c == 'Digital Signature'){
-                                bodyObject.put('signingType','DigitalSignature');
+                                bodyObject.put('signingType','Digital Signature');
                                 bodyObject.put('signingStatus','started');
                             }
                             //CH32: END
