@@ -12,6 +12,8 @@
 *             #CH04# 07-11-2026# Moved the Credit Card logic of CaseHandler.before_UpdateDML into creditCardBeforeUpdate and creditCardBeforeUpdateRouting (CaseHandler #CH96#).
 *             #CH05# #Jahangeer Mohammed# 24-11-2026# Code optimization: removed duplicate code with private helper methods (HELPER METHODS section)
 *                    and removed dead code (unused variables, empty if blocks, never-filled sets). Logic unchanged; System.debug messages kept.
+*             #CH06# #Jahangeer Mohammed# 24-11-2026# Code optimization: changedTo used for the remaining split/non-adjacent checks,
+*                    added changedToAny (field changed to one of several values) and changedToTrue (checkbox checked). Logic unchanged.
 */
 public without sharing class CreditCardHandler {
     private static final String  CREDIT_CARD_PRE_SCREENER_QUEUE = 'Credit Card Pre-Screener Queue';
@@ -176,8 +178,8 @@ public without sharing class CreditCardHandler {
             //CH55: Added Region Flag in if condition
             //CH50: Start
             if(isNewCreditCard(caseObj) &&
-               ((caseObj.cc_Credit_Pre_Screening_Result__c == 'Offer Cash Collateral') || (caseObj.cc_Credit_Pre_Screening_Result__c == 'Request Missing / Incomplete Documents') || (caseObj.cc_Credit_Pre_Screening_Result__c == 'Retain Customer')) &&
-               caseObj.cc_Credit_Pre_Screening_Result__c != caseOldObj.cc_Credit_Pre_Screening_Result__c && caseObj.cc_Application_Stages__c == 'Credit Pre-Screening' && caseObj.Region_Flag__c == 'Bahrain'){
+               changedToAny(caseObj, caseOldObj, Case.cc_Credit_Pre_Screening_Result__c, new List<String>{'Offer Cash Collateral', 'Request Missing / Incomplete Documents', 'Retain Customer'}) &&
+               caseObj.cc_Application_Stages__c == 'Credit Pre-Screening' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases From Pre-screener to Retention Queue');
                    setCaseRoutedFromPrescreenertoCreditRetention.add(caseObj.id);
                }
@@ -217,16 +219,14 @@ public without sharing class CreditCardHandler {
             /******************************************* CREDIT EVALUATOR RESULT START ****************************************************/
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Evaluation_Result__c == 'Refer to Service Center' &&
-               caseObj.cc_Credit_Evaluation_Result__c != caseOldObj.cc_Credit_Evaluation_Result__c  &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Evaluation_Result__c, 'Refer to Service Center')  &&
                caseObj.cc_Application_Stages__c == 'Credit Evaluation' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases from Evaluator to Service Center');
                    setCaseRoutedFromEvaluatorToServiceCenter.add(caseObj.id);
                }
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Evaluation_Result__c == 'Accept' &&
-               caseObj.cc_Credit_Evaluation_Result__c != caseOldObj.cc_Credit_Evaluation_Result__c  &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Evaluation_Result__c, 'Accept')  &&
                caseObj.cc_Application_Stages__c == 'Credit Evaluation' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases from Evaluator to Verifier');
                    setCaseRoutedFromEvaluatorToVerifier.add(caseObj.id);
@@ -234,8 +234,7 @@ public without sharing class CreditCardHandler {
             //CH55: Added Region Flag in if condition
             //CH10: Start
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Evaluation_Result__c == 'Accept Release Letter' &&
-               caseObj.cc_Credit_Evaluation_Result__c != caseOldObj.cc_Credit_Evaluation_Result__c  &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Evaluation_Result__c, 'Accept Release Letter')  &&
                caseObj.cc_Application_Stages__c == 'Credit Evaluation' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases from Evaluator Accept Release Letter');
                    setCaseAcceptedByEvaluator.add(caseObj.id);
@@ -245,16 +244,14 @@ public without sharing class CreditCardHandler {
             /******************************************* CREDIT VERIFIER START **********************************************************/
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Verification_Result__c == 'Approve' &&
-               caseObj.cc_Credit_Verification_Result__c != caseOldObj.cc_Credit_Verification_Result__c  &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Verification_Result__c, 'Approve')  &&
                caseObj.cc_Application_Stages__c == 'Credit Verification' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases from Verifier to Approver');
                    setCaseRoutedFromVerifierToApprover.add(caseObj.id);
                }
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Verification_Result__c == 'Refer to Service Center' &&
-               caseObj.cc_Credit_Verification_Result__c != caseOldObj.cc_Credit_Verification_Result__c  &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Verification_Result__c, 'Refer to Service Center')  &&
                caseObj.cc_Application_Stages__c == 'Credit Verification' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases from Verifier to Service Center');
                    setCaseRoutedFromVerifierToServiceCenter.add(caseObj.id);
@@ -263,8 +260,7 @@ public without sharing class CreditCardHandler {
             /******************************************* CREDIT APPROVER RESULT START ***************************************************/
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Approval_Result__c == 'Approve' &&
-               caseObj.cc_Credit_Approval_Result__c != caseOldObj.cc_Credit_Approval_Result__c &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Approval_Result__c, 'Approve') &&
                caseObj.cc_Application_Stages__c == 'Credit Approval' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases for Signature Verification Queue From Credit Approver');
                    //#CH84 : Start
@@ -281,8 +277,7 @@ public without sharing class CreditCardHandler {
             ////////////////////////// Start : Cases Routing to Credit Service Center when Credit Approval Result = 'Refer to Service Center' in CRM and Sending Status 'REFERRED' in API ///////////////////////////////////////
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Credit_Approval_Result__c == 'Refer to Service Center' &&
-               caseObj.cc_Credit_Approval_Result__c != caseOldObj.cc_Credit_Approval_Result__c &&
+               changedTo(caseObj, caseOldObj, Case.cc_Credit_Approval_Result__c, 'Refer to Service Center') &&
                caseObj.cc_Application_Stages__c == 'Credit Approval' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases for Credit Card Service Center Queue From Credit Approver');
                    setCasesRoutedToCreditServiceCenterQueueFromApprover.add(caseObj.id);
@@ -345,8 +340,7 @@ public without sharing class CreditCardHandler {
             ////// Start : When Signature Verifier Result = Refer to Service Center then Re-routing to Credit Card Service Center Queue ////////////////////////
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Signature_Verifier_Result__c == 'Refer to Service Center' &&
-               caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c &&
+               changedTo(caseObj, caseOldObj, Case.cc_Signature_Verifier_Result__c, 'Refer to Service Center') &&
                caseObj.cc_Application_Stages__c == 'Credit Signature Verification' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases for Credit Card Service Center Queue From Signature Verifier');
                    setCasesRoutedToCreditServiceCenterQueueFromSignatureVerifier.add(caseObj.id);
@@ -366,8 +360,7 @@ public without sharing class CreditCardHandler {
             ////// Start : When Service Center Result = 'Return to Evaluator' then Re-routing to Credit Card Evaluation Queue ////////////////////////
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Service_Centre_Result__c == 'Return to Evaluator' &&
-               caseObj.cc_Service_Centre_Result__c != caseOldObj.cc_Service_Centre_Result__c &&
+               changedTo(caseObj, caseOldObj, Case.cc_Service_Centre_Result__c, 'Return to Evaluator') &&
                caseObj.cc_Application_Stages__c == 'Credit Service Centre' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases Routed from Service Center to Evaluation queue');
                    setCaseRoutedToEvaluationQueueFromServiceCenter.add(caseObj.id);
@@ -376,8 +369,7 @@ public without sharing class CreditCardHandler {
             ////// Start : When Service Center Result = 'Return to Verifier' then Re-routing to Credit Verification Queue ////////////////////////
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Service_Centre_Result__c == 'Return to Verifier' &&
-               caseObj.cc_Service_Centre_Result__c != caseOldObj.cc_Service_Centre_Result__c &&
+               changedTo(caseObj, caseOldObj, Case.cc_Service_Centre_Result__c, 'Return to Verifier') &&
                caseObj.cc_Application_Stages__c == 'Credit Service Centre' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases Routed from Service Center to Verification queue');
                    setCaseRoutedToVerificationQueueFromServiceCenter.add(caseObj.id);
@@ -386,8 +378,7 @@ public without sharing class CreditCardHandler {
             ////// Start : When Service Center Result = 'Return to Approver' then Re-routing to Credit Approver Queue ////////////////////////
             //CH55: Added Region Flag in if condition
             if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) &&
-               caseObj.cc_Service_Centre_Result__c == 'Return to Approver' &&
-               caseObj.cc_Service_Centre_Result__c != caseOldObj.cc_Service_Centre_Result__c &&
+               changedTo(caseObj, caseOldObj, Case.cc_Service_Centre_Result__c, 'Return to Approver') &&
                caseObj.cc_Application_Stages__c == 'Credit Service Centre' && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases Routed from Service Center to Approval queue');
                    setCaseRoutedToApproverQueueFromServiceCenter.add(caseObj.id);
@@ -506,7 +497,7 @@ public without sharing class CreditCardHandler {
             //CH23: Start
             // //CH55: Added Region Flag in if condition
             if(((isNewCreditCard(caseObj) && recordtypeName == 'Credit Card - Staff  Application') || (isLimitIncrease(caseObj)  && recordtypeName == 'Credit Limit Increase Staff')) &&
-               caseObj.cc_Request_Digital_Documents__c != caseOldObj.cc_Request_Digital_Documents__c && caseObj.cc_Request_Digital_Documents__c == true &&
+               changedToTrue(caseObj, caseOldObj, Case.cc_Request_Digital_Documents__c) &&
                caseObj.Status == 'Closed' && (caseObj.Sub_Status__c == 'Approved' || caseObj.Sub_Status__c == 'Balance Transfer Processed') && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Set Cases for HR Requesting for digital documents for Closed Cases');
                    setExistingCasesProvideDigitalDocs.add(caseObj.id);
@@ -536,7 +527,7 @@ public without sharing class CreditCardHandler {
                 (changedTo(caseObj, caseOldObj, Case.cc_Credit_Approval_Result__c, 'Decline')) ||
                 (changedTo(caseObj, caseOldObj, Case.cc_HR_Result__c, 'Decline')) ||
                 (changedTo(caseObj, caseOldObj, Case.cc_Business_Approval_Result__c, 'Decline'))||
-                (caseObj.cc_Credit_Evaluation_Result__c != caseOldObj.cc_Credit_Evaluation_Result__c && (caseObj.cc_Credit_Evaluation_Result__c =='Rejected' || caseObj.cc_Credit_Evaluation_Result__c == 'Decline'))||
+                (changedToAny(caseObj, caseOldObj, Case.cc_Credit_Evaluation_Result__c, new List<String>{'Rejected', 'Decline'}))||
                 (changedTo(caseObj, caseOldObj, Case.cc_Credit_Verification_Result__c, 'Decline'))||
                 (changedTo(caseObj, caseOldObj, Case.cc_Credit_Pre_Screening_Result__c, 'Decline'))||
                 (changedTo(caseObj, caseOldObj, Case.cc_Signature_Verifier_Result__c, 'Decline'))) && caseObj.Region_Flag__c == 'Bahrain')
@@ -573,13 +564,13 @@ public without sharing class CreditCardHandler {
             //CH13 : Start
             //CH26 : Commented by #Jahangeer Mohammed# #14-03-2022# related to Credit Card Application
             //CH55: Added Region Flag in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application') && caseOldObj.cc_SMS_Sent_Flag__c != caseObj.cc_SMS_Sent_Flag__c && caseObj.cc_SMS_Sent_Flag__c == true && caseObj.Region_Flag__c == 'Bahrain' ){
+            if((caseObj.Type == 'Credit Limit Increase Application') && changedToTrue(caseObj, caseOldObj, Case.cc_SMS_Sent_Flag__c) && caseObj.Region_Flag__c == 'Bahrain' ){
                 setCasePendingForSMSReminders.add(caseObj.id);
             }
             //CH26 : Commented by #Jahangeer Mohammed# #14-03-2022# related to Credit Card Application
             //CH55: Added Region Flag in if condition
             //CH44 : Added by Jahangeer Mohammed #16-10-2022# related to 'Cash Collateral Credit Limit Increase Application' in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application') && caseOldObj.cc_signature_sms_sent_flag__c != caseObj.cc_signature_sms_sent_flag__c && caseObj.cc_signature_sms_sent_flag__c == true && caseObj.Region_Flag__c == 'Bahrain'){
+            if((caseObj.Type == 'Credit Limit Increase Application' || caseObj.Type == 'Cash Collateral Credit Limit Increase Application') && changedToTrue(caseObj, caseOldObj, Case.cc_signature_sms_sent_flag__c) && caseObj.Region_Flag__c == 'Bahrain'){
                 setCasePendingForSignatureReminders.add(caseObj.id);
             }
             //CH13 : END
@@ -673,7 +664,7 @@ public without sharing class CreditCardHandler {
             //CH06: Start
             //CH55: Added Region Flag in if condition
             //CH13: Start
-            if(caseObj.cc_Signature_Verifier_Result__c =='Accept' && caseObj.Type =='Credit Limit Increase Application' && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c && caseObj.Region_Flag__c == 'Bahrain'){
+            if(changedTo(caseObj, caseOldObj, Case.cc_Signature_Verifier_Result__c, 'Accept') && caseObj.Type =='Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain'){
                 System.debug('Signature Verifier Accepts for Credit Limit Increase');
                 setCaseApprovedBySigVerifierForLimitIncrease.add(caseObj.Id);
             }
@@ -682,12 +673,12 @@ public without sharing class CreditCardHandler {
             ////////////////////////////////////// Updating Customer details on Contact Post Credit Evaluator Approval/ rejection on Case ///////////////////////////////////
             //CH55: Added Region Flag in if condition
             //CH40: Start
-            if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) && caseObj.cc_Credit_Approval_Result__c != caseOldObj.cc_Credit_Approval_Result__c && (caseObj.cc_Credit_Approval_Result__c == 'Approve' || caseObj.cc_Credit_Approval_Result__c == 'Decline') && caseObj.Region_Flag__c == 'Bahrain')
+            if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) && changedToAny(caseObj, caseOldObj, Case.cc_Credit_Approval_Result__c, new List<String>{'Approve', 'Decline'}) && caseObj.Region_Flag__c == 'Bahrain')
             {
                 mapCasetoAccount.put(caseObj.Id, caseObj.AccountId);
             }
             //CH55: Added Region Flag in if condition
-            if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) && caseObj.cc_HR_Result__c != caseOldObj.cc_HR_Result__c && (caseObj.cc_HR_Result__c == 'Approved' || caseObj.cc_HR_Result__c == 'Decline')  && caseObj.Region_Flag__c == 'Bahrain')
+            if((isNewCreditCard(caseObj) || isLimitIncrease(caseObj)) && changedToAny(caseObj, caseOldObj, Case.cc_HR_Result__c, new List<String>{'Approved', 'Decline'})  && caseObj.Region_Flag__c == 'Bahrain')
             {
                 mapCasetoAccountHR.put(caseObj.Id, caseObj.AccountId);
             }
@@ -984,8 +975,7 @@ public without sharing class CreditCardHandler {
             //CH26: Start
             //CH50: Added Follow up condition in if block
             //CH55: Added Region Flag in if condition
-            if(isNewCreditCard(caseObj) && caseOldObj.Sub_Status__c != caseObj.Sub_Status__c &&
-               (caseObj.Sub_Status__c == 'Pending' || caseObj.Sub_Status__c == 'Discrepancies' || caseObj.Sub_Status__c == 'Follow Up') && caseObj.Region_Flag__c == 'Bahrain'){
+            if(isNewCreditCard(caseObj) && changedToAny(caseObj, caseOldObj, Case.Sub_Status__c, new List<String>{'Pending', 'Discrepancies', 'Follow Up'}) && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Checking Sub Status values from Other State ------> Pending');
                    stampSubStatusChange(caseObj, 'Not Changed');
                }
@@ -998,8 +988,7 @@ public without sharing class CreditCardHandler {
                }
             //CH26: END
             //CH66: Start
-            if(isLimitIncrease(caseObj) && caseOldObj.Sub_Status__c != caseObj.Sub_Status__c &&
-               (caseObj.Sub_Status__c == 'Pending' || caseObj.Sub_Status__c == 'Discrepancies') && caseObj.Region_Flag__c == 'Bahrain'){
+            if(isLimitIncrease(caseObj) && changedToAny(caseObj, caseOldObj, Case.Sub_Status__c, new List<String>{'Pending', 'Discrepancies'}) && caseObj.Region_Flag__c == 'Bahrain'){
                    System.debug('Checking Sub Status values from Other State in limit increase ------> Pending');
                    stampSubStatusChange(caseObj, 'Not Changed');
                }
@@ -1014,7 +1003,7 @@ public without sharing class CreditCardHandler {
             //CH28 : Added IsCashCollateral field in if condition
             //CH44 : Commented by Jahangeer Mohammed #06-09-2022# realated to Credit Limit Increase Application
             //CH55: Added Region Flag in if condition
-            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain') && caseObj.cc_Signature_Verifier_Result__c != caseOldObj.cc_Signature_Verifier_Result__c && (caseObj.cc_Signature_Verifier_Result__c == 'Re-Send' || caseObj.cc_Signature_Verifier_Result__c == 'Refer to Service Center') && caseObj.Awaiting_Customer_Feedback__c == true)
+            if((caseObj.Type == 'Credit Limit Increase Application' && caseObj.Region_Flag__c == 'Bahrain') && changedToAny(caseObj, caseOldObj, Case.cc_Signature_Verifier_Result__c, new List<String>{'Re-Send', 'Refer to Service Center'}) && caseObj.Awaiting_Customer_Feedback__c == true)
             {
                 caseObj.Customer_Responded_for_Pending_Signature__c = 'Customer Not Responded';
                 caseObj.cc_Date_Awaiting_For_Pending_Signature__c = System.now();
@@ -1274,5 +1263,27 @@ public without sharing class CreditCardHandler {
         String newFieldValue = (String)caseObj.get(field);
         String oldFieldValue = (String)caseOldObj.get(field);
         return newFieldValue != oldFieldValue && newFieldValue == newValue;
+    }
+
+    //true when the field changed and its new value is one of newValues (each value compared with ==, as before)
+    private static Boolean changedToAny(Case caseObj, Case caseOldObj, Schema.SObjectField field, List<String> newValues){
+        String newFieldValue = (String)caseObj.get(field);
+        String oldFieldValue = (String)caseOldObj.get(field);
+        if(newFieldValue == oldFieldValue){
+            return false;
+        }
+        for(String newValue : newValues){
+            if(newFieldValue == newValue){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //true when the checkbox field changed and is now checked
+    private static Boolean changedToTrue(Case caseObj, Case caseOldObj, Schema.SObjectField field){
+        Boolean newFieldValue = (Boolean)caseObj.get(field);
+        Boolean oldFieldValue = (Boolean)caseOldObj.get(field);
+        return newFieldValue != oldFieldValue && newFieldValue == true;
     }
 }
