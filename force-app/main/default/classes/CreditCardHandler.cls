@@ -1,19 +1,12 @@
-/*      Organization : ABC Bank
-*      Description  : Support class for CaseHandler. Contains the Credit Card / Manual Onboarding
-*                     after-update logic that was previously in CaseHandler.reStartManualOnboarding.
-*                     Invoked from CaseHandler.afterUpdate().
+/*     Organization : ABC Bank
+*      Description  : Support class for CaseHandler. Contains the Credit Card after-update logic that was previously in CaseHandler.reStartManualOnboarding.
+*                     Moved reStartManualOnboarding from CaseHandler and renamed it to creditCardApplicationUpdate
+*                     Moved the Credit Card logic of CaseHandler.setContact into creditCardApplicationInsert 
+*                     Moved the Credit Card logic of CaseHandler.before_UpdateDML into creditCardBeforeUpdate and creditCardBeforeUpdateRouting
+*                     Removed duplicate code with private helper methods (HELPER METHODS section) and removed dead code (unused variables, empty if blocks, never-filled sets)               
 *      Created Date : 01-11-2026
 *      Change History:
-*             #CH01# 01-11-2026# Moved reStartManualOnboarding from CaseHandler and renamed it to creditCardApplicationUpdate (CaseHandler #CH93#).
-*                    All change markers (CH01-CH92) inside the method refer to the CaseHandler change history.
-*             #CH02# 01-11-2026# Moved the Non-Credit Card logic (Manual Customer Archival, Technical, eKYC, Stop Jamiyah,
-*                    Customer Profile Update) back to CaseHandler.reStartManualOnboarding (CaseHandler #CH94#).
-*             #CH03# 02-11-2026# Moved the Credit Card logic of CaseHandler.setContact into creditCardApplicationInsert (CaseHandler #CH95#).
-*             #CH04# 07-11-2026# Moved the Credit Card logic of CaseHandler.before_UpdateDML into creditCardBeforeUpdate and creditCardBeforeUpdateRouting (CaseHandler #CH96#).
-*             #CH05# #Jahangeer Mohammed# 24-11-2026# Code optimization: removed duplicate code with private helper methods (HELPER METHODS section)
-*                    and removed dead code (unused variables, empty if blocks, never-filled sets). Logic unchanged; System.debug messages kept.
-*             #CH06# #Jahangeer Mohammed# 24-11-2026# Code optimization: changedTo used for the remaining split/non-adjacent checks,
-*                    added changedToAny (field changed to one of several values) and changedToTrue (checkbox checked). Logic unchanged.
+*                  
 */
 public without sharing class CreditCardHandler {
     private static final String  CREDIT_CARD_PRE_SCREENER_QUEUE = 'Credit Card Pre-Screener Queue';
@@ -284,8 +277,6 @@ public without sharing class CreditCardHandler {
                }
             ////////////////////////// END : Cases Routing to Credit Service Center when Credit Approval Result = 'Refer to Service Center' in CRM and Sending Status 'REFERRED' in API ///////////////////////////////////////
             /******************************************* CREDIT APPROVER RESULT END ***************************************************/
-            /******************************************** CEO APPROVER RESULT START *****************************************************/
-            /******************************************** CEO APPROVER RESULT END *******************************************************/
             /******************************************* SIGNATURE VERIFIER RESULT START ***************************************************/
             //////// Start : When Signature Verifier Result = 'Accept' then cases are closed in CRM, If Approved Requested Card Type = ila Blue or ila Black and Sending Status as 'Approved' in API ////////////////////
             //CH55: Added Region Flag in if condition
@@ -453,10 +444,6 @@ public without sharing class CreditCardHandler {
             }
             //CH22: END
             /******************************************* HR APPROVAL RESULT END FOR ILA SWITCH-BALANCE TRANSFER **************************************************************/
-            /******************************************* HR APPROVAL RESULT START FOR ILA SWITCH-BUYOUT ***********************************************************************/
-            //CH10: Start
-            //CH10: END
-            /******************************************* HR APPROVAL RESULT END FOR ILA SWITCH-BUYOUT ***********************************************************************/
             /******************************************* HR APPROVAL RESULT START ACCEPT RELEASE LETTER **************************************************************/
             //CH55: Added Region Flag in if condition
             //CH13: Commented by #Jahangeer Mohammed# #02-11-2021# Credit Limit Update Condition.
@@ -469,8 +456,6 @@ public without sharing class CreditCardHandler {
                 setCaseHRApprovedForReleaseLetter.add(caseObj.id);
             }
             /******************************************* HR APPROVAL RESULT END ACCEPT RELEASE LETTER **************************************************************/
-            /******************************************* HR APPROVAL RESULT START FOR ILA BLUE/BLACK **************************************************************/
-            /******************************************* HR APPROVAL RESULT END FOR ILA BLUE/BLACK **************************************************************/
             /******************************************* HR APPROVAL START FOR LIMIT UPDATE *******************************************************/
             //CH13: Start
             //CH24: Start
