@@ -1,15 +1,13 @@
-/*      Organization : ABC Bank
-*      Description  : Helper methods for the Credit Card Request API calls made by
-*                     initiateManualOnboarding.CCCaseCreation and CCCaseUpdate (request creation, card catalogue lookup,
+/*     Organization : ABC Bank
+*      Description  : Helper methods for the Credit Card Request API calls made by initiateManualOnboarding.CCCaseCreation and CCCaseUpdate (request creation, card catalogue lookup,
 *                     request body building, sending, failure logging and success handling).
+*                     Moved the duplicated code of initiateManualOnboarding.CCCaseCreation into helper methods (logic and API request bodies unchanged).
+*                     Moved all remaining request bodies of initiateManualOnboarding.CCCaseUpdate into body methods (CCCaseUpdate REQUEST BODIES section; bodies unchanged).
 *      Created Date : 21-11-2026
 *      Change History:
-*             #CH01# #Jahangeer Mohammed# 21-11-2026# Moved the duplicated code of initiateManualOnboarding.CCCaseCreation
-*                    into helper methods (logic and API request bodies unchanged).
-*             #CH02# #Jahangeer Mohammed# 22-11-2026# Added helper methods for the duplicated code of initiateManualOnboarding.CCCaseUpdate
-*                    (send and log, card catalogue, status / campaign / approved bodies, signing details, stages, cross-selling).
-*             #CH03# #Jahangeer Mohammed# 22-11-2026# Moved all remaining request bodies of initiateManualOnboarding.CCCaseUpdate
-*                    into body methods (CCCaseUpdate REQUEST BODIES section; bodies unchanged).
+                        #CH04# #25-11-2026# After the supplementary PENDING request, call blacklist-validation
+*                       with the same body and headers, renaming embossName to nameOnTheCard.
+*             
 */
 public inherited sharing class CreditCardHandlerAPI {
     private static ApiConnection con = new ApiConnection();
@@ -27,6 +25,11 @@ public inherited sharing class CreditCardHandlerAPI {
 
     public static final String LOG_ENDPOINT_GET_CREDIT_CARDS = 'callout:NeoBank_Endpoint/api/v1/credit-cards?language=en&unit=neo';
     public static final String LOG_ENDPOINT_CREDIT_CARD_REQUEST = 'callout:NeoBank_Endpoint/api/v1/credit-cards/request?language=en&unit=neo';
+
+    //CH04: Start
+    public static final String SUPPLEMENTARY_BLACKLIST_VALIDATION_PATH = '/api/v1/credit-cards/supplementary-cardholder/blacklist-validation';
+    public static final String LOG_ENDPOINT_SUPPLEMENTARY_BLACKLIST = 'callout:NeoBank_Endpoint/api/v1/credit-cards/supplementary-cardholder/blacklist-validation?language=en&unit=neo';
+    //CH04: END
 
     public static final String ACTION_CREDIT_CARD_APPLICATION = 'Credit Card Application';
     public static final String ACTION_SUPPLEMENTARY_APPLICATION = 'Credit Card Supplementary Application';
@@ -693,6 +696,50 @@ public inherited sharing class CreditCardHandlerAPI {
         system.debug('---> Responce New --> '+response.getBody());
         return response;
     }
+
+    //CH04: Start
+    /**
+    * @description Same supplementary request body, with embossName sent as nameOnTheCard
+    *              and cpr added as a string inside supplementaryCard.
+    */
+    public static String toBlacklistValidationBody(String requestBody){
+        if(requestBody == null){
+            return null;
+        }
+        String body = requestBody.replace('"embossName":', '"nameOnTheCard":');
+        Integer supplementaryStart = body.indexOf('"supplementaryCard":');
+        if(supplementaryStart >= 0){
+            Integer supplementaryEnd = body.indexOf('}', supplementaryStart);
+            if(supplementaryEnd >= 0){
+                body = body.substring(0, supplementaryEnd) + ',"cpr":"871399920"' + body.substring(supplementaryEnd);
+            }
+        }
+        return body;
+    }
+
+    /**
+    * @description After the supplementary PENDING credit-cards/request call.
+    *              Same headers and body; embossName is renamed to nameOnTheCard.
+    *              language and unit are appended by ApiConnection, same as the request call.
+    *              A failed validation is logged only when logFailure is true, so an earlier request failure is kept.
+    */
+    public static HttpResponse sendSupplementaryBlacklistValidation(Case objCase, String regionName, String requestBody, List<System_Action__c> lstSA, Boolean logFailure){
+        String blacklistBody = toBlacklistValidationBody(requestBody);
+        System.debug('CH04 blacklist validation --> region=' + regionName + ' logFailure=' + logFailure);
+        System.debug('CH04 blacklist validation --> original body=' + requestBody);
+        System.debug('CH04 blacklist validation --> renamed body=' + blacklistBody);
+        HttpRequest request = createCardApiRequest('POST', SUPPLEMENTARY_BLACKLIST_VALIDATION_PATH, regionName, objCase);
+        request.setHeader('x-canary', 'cc1');
+        System.debug('CH04 blacklist validation --> endpoint=' + request.getEndpoint() + ' method=' + request.getMethod() + ' x-canary=' + request.getHeader('x-canary'));
+        HttpResponse response = sendCardRequest(request, objCase, blacklistBody);
+        System.debug('CH04 blacklist validation --> response statusCode=' + response.getStatusCode() + ' status=' + response.getStatus() + ' body=' + response.getBody());
+        if(logFailure && response.getStatusCode() != 200){
+            System.debug('CH04 blacklist validation --> logging failure');
+            replaceWithFailureLog(lstSA, request, response, objCase, LOG_ENDPOINT_SUPPLEMENTARY_BLACKLIST, 'POST', ACTION_SUPPLEMENTARY_APPLICATION);
+        }
+        return response;
+    }
+    //CH04: END
 
     /**
     * @description Logs a failed call. Keeps the existing behaviour of CCCaseCreation: lstSA is replaced,
